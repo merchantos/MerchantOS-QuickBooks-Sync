@@ -1,261 +1,228 @@
-<?
+<?php
+
+/**
+ * oauth-php: Example OAuth client for accessing Google Docs
+ *
+ * @author BBG
+ *
+ * 
+ * The MIT License
+ * 
+ * 
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ * 
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
+
 include_once("config.inc.php");
+GLOBAL $_OAUTH_INTUIT_CONFIG;
 
-require_once("lib/MOSAPICall.class.php");
+include_once("lib/SessionAccess.class.php");
 
-// setup our credentials
-// this key is to our demo data and allows full access to just /Account/797/Item control
-$mosapi = new MOSAPICall(MOS_API_KEY,"1");
+include_once("oauth/library/OAuthStore.php");
+include_once("oauth/library/OAuthRequester.php");
 
-$start_date = new DateTime("2012-01-01");
-$start_date = $start_date->format('c');
+include_once("IntuitAnywhere/IntuitAnywhere.class.php");
 
-$end_date = new DateTime();
-$end_date = $end_date->format('c');
+$setup_sess_access = new SessionAccess("setup");
+$qb_sess_access = new SessionAccess("qb");
+$oauth_sess_access = new SessionAccess("oauth");
 
-$sales_days = array();
-
-echo "<html><body>";
-
-$sales_by_tax_class = $mosapi->makeAPICall("Account.Reports.Accounting.TaxClassSalesByDay","Read",null,null,"xml","startDate=$start_date&endDate=$end_date");
-
-echo "<table>";
-echo "<tr>";
-	echo "<th>date</th>";
-	echo "<th>shopID</th>";
-	echo "<th>classID</th>";
-	echo "<th>taxClassName</th>";
-	echo "<th>subtotal</th>";
-	echo "<th>fifoCost</th>";
-	echo "<th>avgCost</th>";
-echo "</tr>";
-foreach ($sales_by_tax_class as $sales_day_class)
+try
 {
-	$shopID = (string)$sales_day_class->shopID;
-	$date = (string)$sales_day_class->date;
-	$tax_class = (string)$sales_day_class->taxClassName;
-	$sales_days[$shopID][$date]['sales'][$tax_class] = (string)$sales_day_class->subtotal;
-	$sales_days[$shopID][$date]['fifo_cogs'][$tax_class] = (string)$sales_day_class->fifoCost;
-	$sales_days[$shopID][$date]['avg_cogs'][$tax_class] = (string)$sales_day_class->avgCost;
+	$ianywhere = new IntuitAnywhere($qb_sess_access);
 	
-	echo "<tr>";
-		echo "<td>" . (string)$sales_day_class->date . "</td>";
-		echo "<td>" . (string)$sales_day_class->shopID . "</td>";
-		echo "<td>" . (string)$sales_day_class->taxClassID . "</td>";
-		echo "<td>" . (string)$sales_day_class->taxClassName . "</td>";
-		echo "<td>" . (string)$sales_day_class->subtotal . "</td>";
-		echo "<td>" . (string)$sales_day_class->fifoCost . "</td>";
-		echo "<td>" . (string)$sales_day_class->avgCost . "</td>";
-	echo "</tr>";
-}
-echo "</table>";
-
-$discounts = $mosapi->makeAPICall("Account.Reports.Accounting.DiscountsByDay","Read",null,null,"xml","startDate=$start_date&endDate=$end_date");
-
-echo "<table>";
-echo "<tr>";
-	echo "<th>date</th>";
-	echo "<th>shopID</th>";
-	echo "<th>discount</th>";
-echo "</tr>";
-foreach ($discounts as $discount_day)
-{
-	$shopID = (string)$discount_day->shopID;
-	$date = (string)$discount_day->date;
-	$sales_days[$shopID][$date]['discounts'] = (string)$discount_day->discount;
+	$is_authorized = false;
+	$is_setup = false;
 	
-	echo "<tr>";
-		echo "<td>" . (string)$discount_day->date . "</td>";
-		echo "<td>" . (string)$discount_day->shopID . "</td>";
-		echo "<td>" . (string)$discount_day->discount . "</td>";
-	echo "</tr>";
-}
-echo "</table>";
-
-$taxes_by_day = $mosapi->makeAPICall("Account.Reports.Accounting.TaxesByDay","Read",null,null,"xml","startDate=$start_date&endDate=$end_date");
-
-echo "<table>";
-echo "<tr>";
-	echo "<th>date</th>";
-	echo "<th>shopID</th>";
-	echo "<th>taxCategoryID</th>";
-	echo "<th>taxCategoryName</th>";
-	echo "<th>tax</th>";
-echo "</tr>";
-foreach ($taxes_by_day as $tax_day)
-{
-	$shopID = (string)$tax_day->shopID;
-	$date = (string)$tax_day->date;
-	$tax_vendor = (string)$tax_day->taxCategoryName;
-	$sales_days[$shopID][$date]['taxes'][$tax_vendor] = (string)$tax_day->tax;
-	
-	echo "<tr>";
-		echo "<td>" . (string)$tax_day->date . "</td>";
-		echo "<td>" . (string)$tax_day->shopID . "</td>";
-		echo "<td>" . (string)$tax_day->taxCategoryID . "</td>";
-		echo "<td>" . (string)$tax_day->taxCategoryName . "</td>";
-		echo "<td>" . (string)$tax_day->tax . "</td>";
-	echo "</tr>";
-}
-echo "</table>";
-
-$payments = $mosapi->makeAPICall("Account.Reports.Accounting.PaymentsByDay","Read",null,null,"xml","startDate=$start_date&endDate=$end_date");
-
-echo "<table>";
-echo "<tr>";
-	echo "<th>date</th>";
-	echo "<th>shopID</th>";
-	echo "<th>amount</th>";
-	echo "<th>paymentTypeName</th>";
-	echo "<th>paymentTypeID</th>";
-echo "</tr>";
-foreach ($payments as $payment_day_type)
-{
-	$shopID = (string)$payment_day_type->shopID;
-	$date = (string)$payment_day_type->date;
-	$payment_type = (string)$payment_day_type->paymentTypeName;
-	$sales_days[$shopID][$date]['payments'][$payment_type] = (string)$payment_day_type->amount;
-	
-	echo "<tr>";
-		echo "<td>" . (string)$payment_day_type->date . "</td>";
-		echo "<td>" . (string)$payment_day_type->shopID . "</td>";
-		echo "<td>" . (string)$payment_day_type->amount . "</td>";
-		echo "<td>" . (string)$payment_day_type->paymentTypeName . "</td>";
-		echo "<td>" . (string)$payment_day_type->paymentTypeID . "</td>";
-	echo "</tr>";
-}
-echo "</table>";
-
-$unbalanced_days = array();
-echo "<h1>Sales Day</h2>";
-foreach ($sales_days as $shopID=>$sales_day_shop)
-{
-	echo "<h2>shopID = $shopID</h2>";
-	
-	foreach ($sales_day_shop as $date=>$sales_data)
+	if ($ianywhere->isUserAuthorized())
 	{
-		$balance = 0;
-		
-		echo "<h3>Sales Date: $date</h3>";
-		echo "Tax Class Sales<ul>";
-		foreach ($sales_data['sales'] as $tax_class=>$sales_subtotal)
-		{
-			$balance += (float)$sales_subtotal;
-			echo "<li>$tax_class $sales_subtotal</li>";
-		}
-		echo "</ul>";
-		
-		echo "Discounts<ul>";
-		echo "<li>Discounts " . (string)$sales_data['discounts'] . "</li>";
-		echo "</ul>";
-		$balance -= (float)$sales_data['discounts'];
-		
-		echo "Taxes<ul>";
-		foreach ($sales_data['taxes'] as $tax_vendor=>$tax_subtotal)
-		{
-			$balance += (float)$tax_subtotal;
-			echo "<li>$tax_vendor $tax_subtotal</li>";
-		}
-		echo "</ul>";
-		
-		echo "Payments<ul>";
-		foreach ($sales_data['payments'] as $payment_type=>$payment_subtotal)
-		{
-			$balance -= (float)$payment_subtotal;
-			echo "<li>$payment_type $payment_subtotal</li>";
-		}
-		echo "</ul>";
-		
-		echo "Fifo Cogs<ul>";
-		foreach ($sales_data['fifo_cogs'] as $tax_class=>$fifo_cogs_subtotal)
-		{
-			echo "<li>$tax_class $fifo_cogs_subtotal</li>";
-		}
-		echo "</ul>";
-		
-		echo "Avg Cogs<ul>";
-		foreach ($sales_data['avg_cogs'] as $tax_class=>$avg_cogs_subtotal)
-		{
-			echo "<li>$tax_class $avg_cogs_subtotal</li>";
-		}
-		echo "</ul>";
-		
-		if (round($balance) != 0)
-		{
-			$unbalanced_days[] = array($shopID,$date,$sales_data,$balance);
-		}
+		$ianywhere->initOAuth($oauth_sess_access,INTUIT_DISPLAY_NAME,INTUIT_CALLBACK_URL,$_OAUTH_INTUIT_CONFIG,true);
+		$user = $qb_sess_access->CurrentUser;
+		$is_authorized = true;
+	}
+	if ($setup_sess_access->setupComplete)
+	{
+		$is_setup = true;
 	}
 }
-
-echo "<h1>Unbalanced Days</h1><ul>";
-foreach ($unbalanced_days as $unbal_day)
-{
-	echo "<li>";
-	var_dump($unbal_day);
-	echo "</li>";
-}
-echo "</ul>";
-
-$orders_by_taxclass = $mosapi->makeAPICall("Account.Reports.Accounting.OrdersByTaxClass","Read",null,null,"xml","startDate=$start_date&endDate=$end_date");
-
-$orders = array();
-
-echo "<table>";
-echo "<tr>";
-	echo "<th>date</th>";
-	echo "<th>shopID</th>";
-	echo "<th>vendorID</th>";
-	echo "<th>vendorName</th>";
-	echo "<th>taxClassID</th>";
-	echo "<th>taxClassName</th>";
-	echo "<th>cost</th>";
-	echo "<th>orderID</th>";
-	echo "<th>totalShipCost</th>";
-	echo "<th>totalOtherCost</th>";
-echo "</tr>";
-foreach ($orders_by_taxclass as $order_taxclass)
-{
-	$orderID = (string)$order_taxclass->orderID;
-	$tax_class = (string)$order_taxclass->taxClassName;
-	$cost = (string)$order_taxclass->cost;
-	$vendor = (string)$order_taxclass->vendorName;
-	$shipCost = (string)$order_taxclass->totalShipCost;
-	$otherCost = (string)$order_taxclass->totalOtherCost;
-	
-	$orders[$orderID]['vendor'] = $vendor;
-	$orders[$orderID]['shipCost'] = $shipCost;
-	$orders[$orderID]['otherCost'] = $otherCost;
-	$orders[$orderID]['lines'][$tax_class] = $cost;
-	
-	echo "<tr>";
-		echo "<td>" . (string)$order_taxclass->date . "</td>";
-		echo "<td>" . (string)$order_taxclass->shopID . "</td>";
-		echo "<td>" . (string)$order_taxclass->vendorID . "</td>";
-		echo "<td>" . (string)$order_taxclass->vendorName . "</td>";
-		echo "<td>" . (string)$order_taxclass->taxClassID . "</td>";
-		echo "<td>" . (string)$order_taxclass->taxClassName . "</td>";
-		echo "<td>" . (string)$order_taxclass->cost . "</td>";
-		echo "<td>" . (string)$order_taxclass->orderID . "</td>";
-		echo "<td>" . (string)$order_taxclass->totalShipCost . "</td>";
-		echo "<td>" . (string)$order_taxclass->totalOtherCost . "</td>";
-	echo "</tr>";
-}
-echo "</table>";
-
-echo "<h1>Purchase Orders</h2>";
-foreach ($orders as $orderID=>$order)
-{
-	echo "<h3>Order #$orderID</h3><ul>";
-	echo "<li>Vendor: " . $order['vendor'] . "</li>";
-	echo "<li>shipCost: " . $order['shipCost'] . "</li>";
-	echo "<li>otherCost: " . $order['otherCost'] . "</li>";
-	echo "<li>lines:<ul>";
-	foreach ($order['lines'] as $tax_class=>$subtotal)
-	{
-		echo "<li>$tax_class: $subtotal</li>";
-	}
-	echo "</ul></li>";
-	echo "</ul>";
+catch(Exception $e) {
+	echo "Exception: " . $e->getMessage();
+	var_dump($e);
 }
 
-echo "</body></html>";
+?>
+<html>
+	<head>
+		<script src="javascript/jquery-1.8.2.min.js" type="text/javascript"></script>
+		<script src="javascript/mos_qb_sync.js" type="text/javascript"></script>
+		<style type="text/css">
+			.section {
+				display: none;
+			}
+			.section.selected_section {
+				display: block;
+			}
+			h1, h2, h3 {
+				margin-top: 10px;
+				margin-bottom: 0px;
+				padding: 0px;
+			}
+			.setup_group {
+				margin-top: 10px;
+				padding: 5px;
+			}
+			.setup_category {
+				margin-top: 5px;
+				padding: 10px;
+			}
+			.account_select {
+				margin-top: 10px;
+				margin-left: 10px;
+			}
+			.subaccounts {
+				margin-top: 5px;
+				margin-left: 20px;
+			}
+			.account_option {
+				margin-top: 10px;
+				margin-left: 10px;
+			}
+		</style>
+	</head>
+	<body>
+		<?php if ($is_authorized) { ?><h3>Welcome <?php echo $user['handle']; ?> <a href="./logout.php">Discount From QuickBooks</a></h3><? } ?>
+		<div id="welcome" class="section <?php if (!$is_authorized) echo "selected_section"; ?>">
+			<h1>Welcome</h1>
+			The first thing we need you to do is give us access to your QuickBooks data. Click "Get Started" below to continue.
+			<div>
+				<a href="./oauth.php">Get Started</a>
+			</div>
+		</div>
+		<div id="dashboard" class="section <?php if ($is_authorized && $is_setup) echo "selected_section"; ?>">
+			<h1>Dashboard</h1>
+		</div>
+		<div id="settings" class="section <?php if ($is_authorized && !$is_setup) echo "selected_section"; ?>">
+			<h1>Settings</h1>
+			One time setup: We need to map your QuickBooks accounts to MerchantOS activities. Please select the QuickBooks account you want to record each activity under.
+			<div class="setup_group">
+				<h2>Sales</h2>
+				<div class="setup_category">
+					<h3>Sales Income</h3>
+					<div class="account_select">
+						<select class="qb_account_list" id="account_1" name="account_1" >
+							<option value='loading'>Loading...</option>
+						</select>
+					</div>
+					<div class="account_option">
+						<input type="checkbox" checked="checked" /> Create subaccounts for each Tax Class.
+					</div>
+				</div>
+				<div class="setup_category">
+					<h3>Payments</h3>
+					<div class="account_select">
+						<select class="qb_account_list" id="account_2" name="account_2" >
+							<option value='loading'>Loading...</option>
+						</select>
+					</div>
+					<div class="account_option">
+						<input type="checkbox" checked="checked" /> Create subaccounts for each Payment Type.
+					</div>
+				</div>
+				<div class="setup_category">
+					<h3>Tax</h3>
+					<div class="account_select">
+						<select class="qb_account_list" id="account_2" name="account_2" >
+							<option value='loading'>Loading...</option>
+						</select>
+					</div>
+					<div class="account_option">
+						<input type="checkbox" checked="checked" /> Create subaccounts for each Sales Tax.
+					</div>
+				</div>
+				<div class="setup_category">
+					<h3>Credit Accounts</h3>
+					<div class="account_select">
+						<select class="qb_account_list" id="account_2" name="account_2" >
+							<option value='loading'>Loading...</option>
+						</select>
+					</div>
+				</div>
+				<div class="setup_category">
+					<h3>Gift Cards</h3>
+					<div class="account_select">
+						<select class="qb_account_list" id="account_2" name="account_2" >
+							<option value='loading'>Loading...</option>
+						</select>
+					</div>
+				</div>
+			</div>
+			<div class="setup_group">
+				<h2>Inventory</h2>
+				<div class="setup_category">
+					<h3>Cost Of Goods Sold</h3>
+					<div class="account_select">
+						<select class="qb_account_list" id="account_2" name="account_2" >
+							<option value='loading'>Loading...</option>
+						</select>
+					</div>
+					<div class="account_option">
+						<input type="checkbox" checked="checked" /> Create subaccounts for each Tax Class.
+					</div>
+				</div>
+				<div class="setup_category">
+					<h3>Inventory Assets</h3>
+					<div class="account_select">
+						<select class="qb_account_list" id="account_2" name="account_2" >
+							<option value='loading'>Loading...</option>
+						</select>
+					</div>
+					<div class="account_option">
+						<input type="checkbox" checked="checked" /> Create subaccounts for each Tax Class.
+					</div>
+				</div>
+			</div>
+			<div class="setup_group">
+				<h2>Ordering (POs)</h2>
+				<div class="setup_category">
+					<h3>Orders Expense</h3>
+					<div class="account_select">
+						<select class="qb_account_list" id="account_2" name="account_2" >
+							<option value='loading'>Loading...</option>
+						</select>
+					</div>
+				</div>
+				<div class="setup_category">
+					<h3>Shipping Expense</h3>
+					<div class="account_select">
+						<select class="qb_account_list" id="account_2" name="account_2" >
+							<option value='loading'>Loading...</option>
+						</select>
+					</div>
+				</div>
+				<div class="setup_category">
+					<h3>Other Exepnse</h3>
+					<div class="account_select">
+						<select class="qb_account_list" id="account_2" name="account_2" >
+							<option value='loading'>Loading...</option>
+						</select>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

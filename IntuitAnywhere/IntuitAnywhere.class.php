@@ -13,6 +13,15 @@ class IntuitAnywhere
 		$this->store = $store;
 	}
 	
+	public function isUserAuthorized()
+	{
+		if (!isset($this->store->realmId))
+		{
+			return false;
+		}
+		return true;
+	}
+	
 	public function isQBO()
 	{
 		if (!isset($this->store->dataSource))
