@@ -24,9 +24,28 @@ header h1 {
     color: #fff;
     font-size: .8em;
     font-weight: normal;
-    float: right;
+    float: left;
     padding: 20px 15px 15px;
     margin: 0;
+}
+header p {
+    float: right;
+    color: #fff;
+    font-size: .8em;
+    font-weight: normal;
+    padding: 20px 15px 15px;
+    margin: 0;
+}
+header p a {
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: .9em;
+    color: #19314C;
+    text-decoration: none;
+    background-color: #3B73B9;
+    padding: 5px;
+    margin-left: 6px;
+    border-radius: 4px;
 }
 
 section {
@@ -86,9 +105,8 @@ p {
 }
 
 fieldset {
-    margin: 0 0 1.5em;
-    padding: 0;
-    border: none;
+    margin: 0 0 .5em;
+    padding: 15px;
 }
 fieldset p {
     color: #666;
@@ -101,9 +119,11 @@ fieldset ol {
     padding: 0;
 }
 fieldset ol.checkboxes {
-    margin-left: .5em;
+    margin-top: 1em;
 }
-
+fieldset ol.checkboxes li {
+    margin: 0 0 .5em;
+}
 fieldset#chart fieldset {
     background-color: #eee;
     margin: 0;
@@ -111,10 +131,10 @@ fieldset#chart fieldset {
     
     
 }
-fieldset fieldset legend {
+fieldset fieldset h3 {
     background-color: #ccc;
     display: block;
-    padding: 5px;
+    padding: 5px 10px;
     float: none;
     font-size: .8em;
     color: #666;
@@ -133,16 +153,18 @@ fieldset fieldset legend {
 .account_select {
     margin: 0 0 0 200px;
     padding: 10px;
+    border-left: 1px dashed #ccc;
     
     border-top: 1px solid #ccc;
 }
 .account_select label {
     display: block;
     margin: 8px 0 0;
-    font-weight: normal;
+    font-weight: normal;    
 }
 
 div.labels {
+    margin: 1em 0 0;
     overflow: hidden;
 }
 div.labels p {
@@ -153,13 +175,16 @@ div.labels p {
     margin: 0 0 5px;
 }
 div.labels p.merchantos {
-    padding: 0 0 0 50px;
-    width: 200px;
+    padding: 0 0 0;
+    margin: 0 10px 0 0 ;
+    width: 199px;
+    border-right: 1px dashed #ccc;
 }
 
 
 
-legend {
+fieldset h2 {
+    font-weight: normal;
     font-size: 1.2em;
     margin: 0 0 .25em;
 }
@@ -168,4 +193,21 @@ legend {
 label {
     font-size: .8em;
     font-weight: bold;
+}
+
+div.scary {
+    background-color: #fcc;
+    padding: 20px;
+}
+.scary h3 {
+    margin: 0 0 .25em;
+}
+.scary h3 a {
+    font-size: .8em;
+    color: #c00;
+}
+.scary p {
+    margin: 0;
+    font-size: .8em;
+    color: #666;
 }

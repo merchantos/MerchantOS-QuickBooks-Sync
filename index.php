@@ -78,11 +78,14 @@ catch(Exception $e) {
 	    <header>
 	        <h3><a href="http://merchantos.com">MerchantOS</a></h3>
             <h1>Quickbooks Sync</h1>
+            
+    		<p class="user">
+    		    <?php if ($is_authorized) { echo $user['handle']; } ?>
+    		    <a href="/logout.php">Logout</a>
+    		</p>            
 	    </header>
 	    <p>
-	    	<?php if ($is_authorized) { ?>
-    		    <h3>Welcome <?php echo $user['handle']; ?> <a href="./logout.php">Disconnect From QuickBooks</a></h3>
-    		<? } ?>
+
 
 		<section id="welcome" class="<?php if (!$is_authorized) echo "selected"; ?>">
 			<h1>Welcome</h1>
@@ -98,7 +101,7 @@ catch(Exception $e) {
 		    <form>
     			<h1>Settings</h1>		
                 <fieldset>
-    				<legend>Schedule</legend>
+    				<h2>Schedule</h2>
     				<p>Want a little extra time to fix mistakes in MerchantOS before sending them to QuickBooks?</p>
     				<ol>
     				    <li>
@@ -119,7 +122,7 @@ catch(Exception $e) {
     				</ol>
     			</fieldset>
                 <fieldset class="setup_group_toggle">
-                    <legend>Data</legend>
+                    <h2>Data</h2>
                     <p>What data do you want sent to QuickBooks.
     				<ol class="checkboxes">
     				    <li>
@@ -141,7 +144,7 @@ catch(Exception $e) {
     			</fieldset>
 
                 <fieldset id="chart">
-    			    <legend>Chart Of Accounts</legend>
+    			    <h2>Chart Of Accounts</h2>
         			<p>Map MerchantOS activities to QuickBooks.</p>
 
                     <div class="labels">
@@ -149,7 +152,7 @@ catch(Exception $e) {
                         <p class="quickbooks">Quickbooks Account</p>
     			    </div>
     			    <fieldset id="setup_group_sales">
-            			<legend>Sales</legend>
+            			<h3>Sales</h3>
         			
         				<div class="setup_category">
     					   <label for="setup_sales">Sales Income</label>
@@ -196,7 +199,7 @@ catch(Exception $e) {
         				</div>
         			</fieldset>
     			    <fieldset id="setup_group_inventory">
-    				    <legend>Inventory</legend>
+    				    <h3>Inventory</h3>
     				    <div class="setup_category">
     					    <label for="setup_cogs">Cost Of Goods Sold</label>
     					    <div class="account_select">
@@ -217,7 +220,7 @@ catch(Exception $e) {
     				    </div>
     			    </fieldset>
     			    <fieldset id="setup_group_orders">
-    				    <legend>Ordering (POs)</legend>
+    				    <h3>Ordering (POs)</h3>
     				    <div class="setup_category">
     					    <label for="setup_orders">Orders Expense</label>
         					<div class="account_select">
@@ -245,6 +248,13 @@ catch(Exception $e) {
     			    </fieldset>
     		    </fieldset>
     		</form>
+    		
+    		<?php if ($is_authorized) { ?>
+    		<div class="scary">
+	    	    <h3><a href="./logout.php">Disconnect From QuickBooks</a></h3>
+	    	    <p>Disconnecting from QuickBooks will prevent MerchantOS from syncing any data into your QuickBooks account. You can reconnect at any time.</p>
+	    	</div>
+	    	<?php } ?>
 		</section>
 	</body>
 </html>
