@@ -1,8 +1,8 @@
 mosqb = {
 	sections:{
 		activate: function(section_name) {
-			$("div.section").removeClass("selected_section");
-			$("#"+section_name).addClass("selected_section");
+			$("section").removeClass("selected");
+			$("#"+section_name).addClass("selected");
 			mosqb[section_name].init();
 		}
 	},
@@ -57,7 +57,7 @@ mosqb = {
 					// ?
 				});
 			
-			$(".setup_group_toggle").change(function () {
+			$(".setup_group_toggle input").change(function () {
 				var group = $(this).attr('id').substring(11); // remove setup_send_
 				if ($(this).is(':checked')) {
 					$("#setup_group_"+group).show();
@@ -70,7 +70,7 @@ mosqb = {
 };
 
 $(document).ready(function() {
-	var active_section = $(".section.selected_section").attr('id');
+	var active_section = $("section.selected").attr('id');
 	mosqb[active_section].init();
 });
 
