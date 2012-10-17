@@ -56,6 +56,15 @@ mosqb = {
 				.error(function(error) {
 					// ?
 				});
+			
+			$(".setup_group_toggle").change(function () {
+				var group = $(this).attr('id').substring(11); // remove setup_send_
+				if ($(this).is(':checked')) {
+					$("#setup_group_"+group).show();
+				} else {
+					$("#setup_group_"+group).hide();
+				}
+			});
 		}
 	}
 };

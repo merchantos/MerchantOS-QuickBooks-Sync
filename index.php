@@ -118,46 +118,81 @@ catch(Exception $e) {
 		</div>
 		<div id="settings" class="section <?php if ($is_authorized && !$is_setup) echo "selected_section"; ?>">
 			<h1>Settings</h1>
-			One time setup: We need to map your QuickBooks accounts to MerchantOS activities. Please select the QuickBooks account you want to record each activity under.
 			<div class="setup_group">
+				<h2>What Data? How Often?</h2>
+				<div class="setup_category">
+					<h3>Schedule</h3>
+					We want to give you time to fix mistakes in MerchantOS before sending them to QuickBooks. So how long do you want to hold data in MerchantOS before sending it to QuickBooks?
+					<div>
+						Send Data After
+						<select id="setup_data_delay">
+							<option value="1">1 Day</option>
+							<option value="2">2 Days</option>
+							<option value="3">3 Days</option>
+							<option value="4">4 Days</option>
+							<option value="5">5 Days</option>
+							<option value="6">6 Days</option>
+							<option value="7">1 Week</option>
+							<option value="14">2 Weeks</option>
+							<option value="21">3 Weeks</option>
+							<option value="month">1 Month</option>
+						</select>
+					</div>
+					<h3>Data</h3>
+					Choose which type of data you want to send to QuickBooks.
+					<div>
+						<div>
+							<input type="checkbox" id="setup_send_sales" checked="checked" class="setup_group_toggle" /> Sales, Payments, and Tax
+						</div>
+						<div>
+							<input type="checkbox" id="setup_send_inventory" checked="checked" class="setup_group_toggle" /> Cost of Goods Sold and Inventory
+						</div>
+						<div>
+							<input type="checkbox" id="setup_send_orders" checked="checked" class="setup_group_toggle" /> Orders (POs)
+						</div>
+					</div>
+			</div>
+			<h2>Chart Of Accounts</h2>
+			We need to map your QuickBooks accounts to MerchantOS activities. Please select the QuickBooks account you want to record each activity under.
+			<div class="setup_group" id="setup_group_sales">
 				<h2>Sales</h2>
 				<div class="setup_category">
 					<h3>Sales Income</h3>
 					<div class="account_select">
-						<select class="qb_account_list" id="account_1" name="account_1" >
+						<select class="qb_account_list" id="setup_sales" class="setup_field" >
 							<option value='loading'>Loading...</option>
 						</select>
 					</div>
 					<div class="account_option">
-						<input type="checkbox" checked="checked" /> Create subaccounts for each Tax Class.
+						<input type="checkbox" checked="checked"  class="setup_field" id="setup_sales_subaccounts" /> Create subaccounts for each Tax Class.
 					</div>
 				</div>
 				<div class="setup_category">
 					<h3>Payments</h3>
 					<div class="account_select">
-						<select class="qb_account_list" id="account_2" name="account_2" >
+						<select class="qb_account_list" id="setup_payments" class="setup_field" >
 							<option value='loading'>Loading...</option>
 						</select>
 					</div>
 					<div class="account_option">
-						<input type="checkbox" checked="checked" /> Create subaccounts for each Payment Type.
+						<input type="checkbox" checked="checked" class="setup_field" id="setup_payments_subaccounts" /> Create subaccounts for each Payment Type.
 					</div>
 				</div>
 				<div class="setup_category">
 					<h3>Tax</h3>
 					<div class="account_select">
-						<select class="qb_account_list" id="account_2" name="account_2" >
+						<select class="qb_account_list" id="setup_tax" class="setup_field" >
 							<option value='loading'>Loading...</option>
 						</select>
 					</div>
 					<div class="account_option">
-						<input type="checkbox" checked="checked" /> Create subaccounts for each Sales Tax.
+						<input type="checkbox" checked="checked" class="setup_field" id="setup_tax_subaccounts" /> Create subaccounts for each Sales Tax.
 					</div>
 				</div>
 				<div class="setup_category">
 					<h3>Credit Accounts</h3>
 					<div class="account_select">
-						<select class="qb_account_list" id="account_2" name="account_2" >
+						<select class="qb_account_list" id="setup_credit_accounts" class="setup_field" >
 							<option value='loading'>Loading...</option>
 						</select>
 					</div>
@@ -165,43 +200,43 @@ catch(Exception $e) {
 				<div class="setup_category">
 					<h3>Gift Cards</h3>
 					<div class="account_select">
-						<select class="qb_account_list" id="account_2" name="account_2" >
+						<select class="qb_account_list" id="setup_gift_cards" class="setup_field" >
 							<option value='loading'>Loading...</option>
 						</select>
 					</div>
 				</div>
 			</div>
-			<div class="setup_group">
+			<div class="setup_group" id="setup_group_inventory">
 				<h2>Inventory</h2>
 				<div class="setup_category">
 					<h3>Cost Of Goods Sold</h3>
 					<div class="account_select">
-						<select class="qb_account_list" id="account_2" name="account_2" >
+						<select class="qb_account_list" id="setup_cogs" class="setup_field" >
 							<option value='loading'>Loading...</option>
 						</select>
 					</div>
 					<div class="account_option">
-						<input type="checkbox" checked="checked" /> Create subaccounts for each Tax Class.
+						<input type="checkbox" checked="checked" class="setup_field" id="setup_cogs_subaccounts" /> Create subaccounts for each Tax Class.
 					</div>
 				</div>
 				<div class="setup_category">
 					<h3>Inventory Assets</h3>
 					<div class="account_select">
-						<select class="qb_account_list" id="account_2" name="account_2" >
+						<select class="qb_account_list" id="setup_inventory" class="setup_field" >
 							<option value='loading'>Loading...</option>
 						</select>
 					</div>
 					<div class="account_option">
-						<input type="checkbox" checked="checked" /> Create subaccounts for each Tax Class.
+						<input type="checkbox" checked="checked" class="setup_field" id="setup_inventory_subaccounts" /> Create subaccounts for each Tax Class.
 					</div>
 				</div>
 			</div>
-			<div class="setup_group">
+			<div class="setup_group" id="setup_group_orders">
 				<h2>Ordering (POs)</h2>
 				<div class="setup_category">
 					<h3>Orders Expense</h3>
 					<div class="account_select">
-						<select class="qb_account_list" id="account_2" name="account_2" >
+						<select class="qb_account_list" id="setup_orders" class="setup_field" >
 							<option value='loading'>Loading...</option>
 						</select>
 					</div>
@@ -209,7 +244,7 @@ catch(Exception $e) {
 				<div class="setup_category">
 					<h3>Shipping Expense</h3>
 					<div class="account_select">
-						<select class="qb_account_list" id="account_2" name="account_2" >
+						<select class="qb_account_list" id="setup_orders_shipping" class="setup_field" >
 							<option value='loading'>Loading...</option>
 						</select>
 					</div>
@@ -217,7 +252,7 @@ catch(Exception $e) {
 				<div class="setup_category">
 					<h3>Other Exepnse</h3>
 					<div class="account_select">
-						<select class="qb_account_list" id="account_2" name="account_2" >
+						<select class="qb_account_list" id="setup_orders_other" class="setup_field" >
 							<option value='loading'>Loading...</option>
 						</select>
 					</div>
