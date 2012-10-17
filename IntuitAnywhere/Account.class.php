@@ -1,6 +1,6 @@
 <?php
 
-require_once("IntuitAnywhere/DataModel.class.php");
+require_once("../IntuitAnywhere/DataModel.class.php");
 
 class IntuitAnywhere_Account extends IntuitAnywhere_DataModel
 {
@@ -9,6 +9,7 @@ class IntuitAnywhere_Account extends IntuitAnywhere_DataModel
 	public $Subtype;
 	public $AcctNum;
 	public $CurrentBalance;
+	public $AccountParentId;
 	
 	protected function _getQBOObjectName() { return "account"; }
 	protected function _getQBOObjectNamePlural() { return "accounts"; }
@@ -24,8 +25,12 @@ class IntuitAnywhere_Account extends IntuitAnywhere_DataModel
 		
 		$account->Name = (string)$xml->Name;
 		$account->Desc = (string)$xml->Desc;
+		$account->Subtype = (string)$xml->Subtype;
 		$account->AcctNum = (string)$xml->AcctNum;
 		$account->CurrentBalance = (string)$xml->CurrentBalance;
+		$account->AccountParentId = (integer)$xml->AccountParentId;
+		
+		return $account;
 	}
 	
 	protected function _loadFromQBDXML($xml)

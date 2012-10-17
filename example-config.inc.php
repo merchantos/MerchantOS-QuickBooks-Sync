@@ -16,4 +16,17 @@ define("INTUIT_REQUEST_TOKEN_URL", "https://oauth.intuit.com/oauth/v1/get_reques
 define("INTUIT_AUTHORIZE_URL", "https://appcenter.intuit.com/Connect/Begin");
 define("INTUIT_ACCESS_TOKEN_URL", "https://oauth.intuit.com/oauth/v1/get_access_token");
 
+define("INTUIT_DISPLAY_NAME","MerchantOS QuickBooks Sync");
+define("INTUIT_CALLBACK_URL","https://rad.localdev/QuickBooks/start.php");
+
+global $_OAUTH_INTUIT_CONFIG;
+$_OAUTH_INTUIT_CONFIG= array(
+		'consumer_key'		=> INTUIT_CONSUMER_KEY, 
+		'consumer_secret'	=> INTUIT_CONSUMER_SECRET,
+		'server_uri'		=> INTUIT_OAUTH_HOST,
+		'request_token_uri'	=> INTUIT_REQUEST_TOKEN_URL,
+		'authorize_uri'		=> INTUIT_AUTHORIZE_URL,
+		'access_token_uri'	=> INTUIT_ACCESS_TOKEN_URL
+	);
+
 define('OAUTH_TMP_DIR', '/web/dumps/');

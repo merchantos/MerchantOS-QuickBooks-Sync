@@ -32,13 +32,13 @@ abstract class IntuitAnywhere_DataModel
 		}
 		return $this->_getOneQBD($id);
 	}
-	function listAll()
+	function listAll($filters=null)
 	{
 		if ($this->ia->isQBO())
 		{
-			return $this->_listAllQBO();
+			return $this->_listAllQBO($filters);
 		}
-		return $this->_listAllDBD();
+		return $this->_listAllDBD($filters);
 	}
 	function save()
 	{
@@ -49,7 +49,7 @@ abstract class IntuitAnywhere_DataModel
 		return $this->_saveQBD();
 	}
 	
-	protected function _listAllQBO()
+	protected function _listAllQBO($filters)
 	{
 		$page = 1;
 		$per_page = 100;
@@ -59,6 +59,14 @@ abstract class IntuitAnywhere_DataModel
 		$params = array();
 		$params["PageNum"] = $page;
 		$params["ResultsPerPage"] = $per_page;
+		
+		if ($filters && count($filters)>0)
+		{
+			foreach ($filters as $key=>$value)
+			{
+				$params['Filter'] = $key . " :EQUALS: " . $value;
+			}
+		}
 		
 		while (true)
 		{

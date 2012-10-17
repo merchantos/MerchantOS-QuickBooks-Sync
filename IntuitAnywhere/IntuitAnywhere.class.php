@@ -333,4 +333,48 @@ class IntuitAnywhere
 		
 		return $result['body'];
 	}
+	
+	public function getCurrentUser()
+	{
+		$request = new OAuthRequester("https://appcenter.intuit.com/api/v1/user/current","GET");
+		$result = $request->doRequest(0,$curl_opt);
+		
+		if ($result['code'] != 200)
+		{
+			$this->_handleError($result,"Could not get current user.");
+			return false;
+		}
+		
+		$xml = new SimpleXMLElement($result['body']);
+		
+		$FirstName = (string)$xml->User->FirstName;
+		$LastName = (string)$xml->User->LastName;
+		$ScreenName = (string)$xml->User->ScreenName;
+		$EmailAddress = (string)$xml->User->EmailAddress;
+		
+		$handle = $ScreenName;
+		if (strlen(trim($handle))<=0)
+		{
+			$handle = $FirstName . " " . $LastName;
+		}
+		if (strlen(trim($handle))<=0)
+		{
+			$handle = $EmailAddress;
+		}
+		
+		/*
+		 <FirstName>John</FirstName>
+		 <LastName>Doe</LastName>
+		 <EmailAddress>JohnDoe@g88.net</EmailAddress>
+		 <IsVerified>true</IsVerified>
+		 */
+		return array(
+			"handle"=>$handle,
+			"FirstName"=>$FirstName,
+			"LastName"=>$LastName,
+			"EmailAddress"=>$EmailAddress,
+			"ScreenName"=>$ScreenName,
+			"IsVerified"=>(string)$xml->User->IsVerified
+		);
+	}
 }
