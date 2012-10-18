@@ -1,9 +1,13 @@
 mosqb = {
 	sections:{
 		activate: function(section_name) {
-			$("section").removeClass("selected");
+			$("section")
+			  .hide()
+        .find('.selected')
+        .show();
+        
 			$('#loading').show();
-			$("#"+section_name).addClass("selected");
+      $("#"+section_name).show("selected");
 			mosqb[section_name].init();
 		}
 	},
@@ -152,7 +156,13 @@ mosqb = {
 };
 
 $(document).ready(function() {
+  
 	var active_section = $("section.selected").attr('id');
 	mosqb[active_section].init();
+
+  $("a[href='#settings']").click(function() {
+    mosqb.sections.activate('settings');
+  });
+    
 });
 
