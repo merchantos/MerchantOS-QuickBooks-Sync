@@ -68,8 +68,6 @@ catch(Exception $e) {
 ?>
 <html>
 	<head>
-		<script src="javascript/jquery-1.8.2.min.js" type="text/javascript"></script>
-		<script src="javascript/mos_qb_sync.js" type="text/javascript"></script>
 		<link href="css/normalize.css" rel="stylesheet" type="text/css" />
 		<link href="css/style.css" rel="stylesheet" type="text/css" />
 		<title>MerchantOS - Quickbooks Sync</title>
@@ -78,15 +76,15 @@ catch(Exception $e) {
 	    <header>
 	        <h3><a href="http://merchantos.com">MerchantOS</a></h3>
             <h1>Quickbooks Sync</h1>
-            
     		<p class="user">
     		    <?php if ($is_authorized) { echo $user['handle']; } ?>
     		    <a href="/logout.php">Logout</a>
     		</p>            
 	    </header>
-	    <p>
+
 
 		<div id="loading"><img src="images/loading.gif" height="16" width="16" border="0"> loading your data...</div>
+
 
 		<section id="welcome" class="<?php if (!$is_authorized) echo "selected"; ?>" style="display: none;">
 			<h1>Welcome</h1>
@@ -94,8 +92,31 @@ catch(Exception $e) {
 			<a href="./oauth.php" class="button">Get Started &rarr;</a>
 		</section>
 		
-		<section id="dashboard" class="<?php if ($is_authorized && $is_setup) echo "selected"; ?>" style="display: none;">
-			<h1>Dashboard</h1>
+		<section id="dashboard" class="<?php if ($is_authorized && $is_setup) echo "selected"; ?>" >
+			<header>
+    			<h1>Dashboard</h1>
+			    <nav>
+			        <ul>
+			            <li><a href="#settings">Settings</a></li>
+			        </ul>
+			    </nav>
+			</header>
+			
+			<h2>History</h2>
+			<dl>
+			    <dt>October 17, 2012 at 4:13pm</dt>
+			    <dd>Synced 11 sales, 3 purchase orders and turtledove in a pear tree</dd>
+			    <dt>October 16, 2012 at 4:16pm</dt>
+			    <dd>Synced 16 sales, 3 purchase orders and turtledove in a pear tree</dd>
+			    <dt>October 15, 2012 at 4:22pm</dt>
+			    <dd>Synced 28 sales, 3 purchase orders and turtledove in a pear tree</dd>
+			    <dt>October 14, 2012 at 4:01pm</dt>
+			    <dd>Synced - no records</dd>
+			    <dt>October 13, 2012 at 4:36pm</dt>
+			    <dd>Synced 92 sales, 3 purchase orders and turtledove in a pear tree</dd>
+			    <dt>October 12, 2012 at 4:12pm</dt>
+			    <dd>Synced 12 sales, 1 purchase orders and turtledove in a pear tree</dd>
+			</dl>
 		</section>
 		
 		<section id="settings" class="<?php if ($is_authorized && !$is_setup) echo "selected"; ?>" style="display: none;">
@@ -158,7 +179,7 @@ catch(Exception $e) {
         				<div class="setup_category">
     					   <label for="setup_sales">Sales Income</label>
         				   <div class="account_select">
-        				       <select class="qb_account_list" id="setup_sales" name="sales" class="setup_field" >
+        				       <select data-placeholder="Choose a category" class="qb_account_list" id="setup_sales" name="sales" >
         						   <option value='loading'>Loading...</option>
         					   </select>
         					   <label><input type="checkbox" checked="checked"  class="setup_field" id="setup_sales_subaccounts" name="sales_subaccounts" /> Create subaccounts for each Tax Class.</label>
@@ -167,7 +188,7 @@ catch(Exception $e) {
         				<div class="setup_category">
         					<label for="setup_payments">Payments</label>
         					<div class="account_select">
-        						<select class="qb_account_list" id="setup_payments" class="setup_field" name="payments" >
+        						<select class="qb_account_list" id="setup_payments" name="payments" >
         							<option value='loading'>Loading...</option>
         						</select>
             					<label><input type="checkbox" checked="checked" class="setup_field" id="setup_payments_subaccounts" name="payments_subaccounts" /> Create subaccounts for each Payment Type.</label>
@@ -176,7 +197,7 @@ catch(Exception $e) {
         				<div class="setup_category">
         					<label for="qb_account_list">Tax</label>
         					<div class="account_select">
-        						<select class="qb_account_list" id="setup_tax" class="setup_field" name="tax" >
+        						<select class="qb_account_list" id="setup_tax" name="tax" >
         							<option value='loading'>Loading...</option>
         						</select>
         						<label><input type="checkbox" checked="checked" class="setup_field" id="setup_tax_subaccounts" name="tax_subaccounts" /> Create subaccounts for each Sales Tax.</label>
@@ -248,7 +269,7 @@ catch(Exception $e) {
         				</div>
     			    </fieldset>
     		    </fieldset>
-				<button type="submit">Save Settings</button>
+				<input type="submit" value="Save Settings" class="submit" />
     		</form>
     		
     		<?php if ($is_authorized) { ?>
@@ -258,5 +279,8 @@ catch(Exception $e) {
 	    	</div>
 	    	<?php } ?>
 		</section>
+
+        <script src="javascript/jquery-1.8.2.min.js" type="text/javascript"></script>
+		<script src="javascript/mos_qb_sync.js" type="text/javascript"></script>
 	</body>
 </html>

@@ -2,16 +2,14 @@ body {
     font-family: 'Helvetica Neue', Helvetica, sans-serif;
 }
 
-header {
+body > header {
     width: 100%;
     z-index: 1000;
-    
     background-color: #19314C;
-    
     overflow: hidden;
     padding: 0;
 }
-header h3 {
+body > header h3 {
     background: url(../images/merchantos.png) no-repeat;
     float: left;
     margin: 15px 0 14px 15px;
@@ -20,7 +18,7 @@ header h3 {
     height: 25px;
     text-indent: -10000px;
 }
-header h1 {
+body > header h1 {
     color: #fff;
     font-size: .8em;
     font-weight: normal;
@@ -28,7 +26,7 @@ header h1 {
     padding: 20px 15px 15px;
     margin: 0;
 }
-header p {
+body > header p {
     float: right;
     color: #fff;
     font-size: .8em;
@@ -36,7 +34,7 @@ header p {
     padding: 20px 15px 15px;
     margin: 0;
 }
-header p a {
+body > header p a {
     font-weight: bold;
     text-transform: uppercase;
     font-size: .9em;
@@ -57,8 +55,33 @@ section {
 	display: none;
 	padding: 15px;
 }
-section.selected {
-	display: block;
+section.selected { display: block; }
+section header {
+    border-bottom: 3px solid #ccc;
+    overflow: hidden;
+    margin: 0 0 1em;
+}
+section header nav {
+    float: right;
+    margin: 0 15px 0 0;
+}
+section header nav ul { display: inline; }
+section header nav li { display: inline; }
+section header nav a {
+    float: left;
+    background-color: #ccc;
+    color: #666;
+    display: block;
+    padding: 8px 10px ;
+    text-transform: uppercase;
+    font-size: .8em;
+    text-decoration: none;
+}
+section header h1 {
+    float: left;
+    margin: 0;
+    font-size: 2em;
+    font-weight: normal;
 }
 
 .button {
@@ -76,14 +99,12 @@ section.selected {
 	-webkit-box-shadow: 0 1px 2px rgba(0,0,0,.2);
 	-moz-box-shadow: 0 1px 2px rgba(0,0,0,.2);
 	box-shadow: 0 1px 2px rgba(0,0,0,.2);
-	
 	color: #fef4e9;
 	border: solid 1px #da7c0c;
 	background: #f78d1d;
 	background: -webkit-gradient(linear, left top, left bottom, from(#faa51a), to(#f47a20));
 	background: -moz-linear-gradient(top,  #faa51a,  #f47a20);
 	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#faa51a', endColorstr='#f47a20');
-	
 }
 .button:hover {
 	text-decoration: none;
@@ -101,13 +122,10 @@ section.selected {
 	filter:  progid:DXImageTransform.Microsoft.gradient(startColorstr='#f47a20', endColorstr='#faa51a');
 }
 
-h1, h2, h3, h4, h5, h6 {
-    margin: 0 0 .5em;
-}
+h1, h2, h3, h4, h5, h6 { margin: 0 0 .5em; }
 h1{ margin-bottom: .25em; }
-p {
-    margin: 0 0 1em;
-}
+p { margin: 0 0 1em; }
+
 
 fieldset {
     margin: 0 0 .5em;
@@ -123,18 +141,12 @@ fieldset ol {
     margin: 0 0 0;
     padding: 0;
 }
-fieldset ol.checkboxes {
-    margin-top: 1em;
-}
-fieldset ol.checkboxes li {
-    margin: 0 0 .5em;
-}
+fieldset ol.checkboxes { margin-top: 1em; }
+fieldset ol.checkboxes li { margin: 0 0 .5em; }
 fieldset#chart fieldset {
     background-color: #eee;
     margin: 0;
     padding: 0 0 0;
-    
-    
 }
 fieldset fieldset h3 {
     background-color: #ccc;
@@ -159,9 +171,17 @@ fieldset fieldset h3 {
     margin: 0 0 0 200px;
     padding: 10px;
     border-left: 1px dashed #ccc;
-    
     border-top: 1px solid #ccc;
 }
+.account_select select:nth-child(2) {
+    display: block;
+    margin: 5px 0 0 10px;
+}
+.account_select select:nth-child(3) {
+    display: block;
+    margin: 5px 0 0 20px;
+}
+
 .account_select label {
     display: block;
     margin: 8px 0 0;
@@ -199,6 +219,21 @@ label {
     font-size: .8em;
     font-weight: bold;
 }
+input[type='submit'] {
+    border: 1px solid #AAA;
+    border-radius: 5px;
+    padding: 4px 8px;
+    font-size: 13px;
+    color: #444;
+    margin: 1em 0 2em;
+    
+    background-image: -webkit-linear-gradient(top, white 20%, #F6F6F6 50%, #EEE 52%, #F4F4F4 100%);
+    background-image: -moz-linear-gradient(top, white 20%, #F6F6F6 50%, #EEE 52%, #F4F4F4 100%);
+    background-image: -o-linear-gradient(top, white 20%, #F6F6F6 50%, #EEE 52%, #F4F4F4 100%);
+    background-image: linear-gradient(white 20%, #F6F6F6 50%, #EEE 52%, #F4F4F4 100%);
+}
+
+
 
 div.scary {
     background-color: #fcc;
@@ -216,3 +251,31 @@ div.scary {
     font-size: .8em;
     color: #666;
 }
+
+dl {
+	width: 100%;
+	overflow: hidden;
+	border-bottom: 1px solid #ccc;
+}
+dl dd, dl dt {
+    
+    padding: 8px 0 0;
+	min-height: 1em;
+    
+	margin: 0 0 .5em;
+	font-size: .8em;
+	
+	border-top: 1px solid #ccc;
+}
+dl dt {
+    padding: 10px 0 0;
+	width: 180px;
+	float: left;
+	margin: 0;
+
+    font-size: .7em;
+    font-weight: normal;
+    color: #666;
+//  clear: left;
+}
+dl dd { margin-left: 180px; min-height: 1.35em; }

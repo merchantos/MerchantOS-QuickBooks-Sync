@@ -3,7 +3,6 @@ mosqb = {
 		activate: function(section_name) {
 			$("section").removeClass("selected");
 			$('#loading').show();
-			$("#"+section_name).hide();
 			$("#"+section_name).addClass("selected");
 			mosqb[section_name].init();
 		}
@@ -17,7 +16,7 @@ mosqb = {
 	dashboard:{
 		init: function() {
 			$('#loading').hide();
-			$('#dashboaard').hide();
+			$('#dashboaard').show();
 		}
 	},
 	settings:{
@@ -33,6 +32,7 @@ mosqb = {
 						$(this).remove();
 					}
 				});
+
 				var id = parent_select.val();
 				if (mosqb.settings.qb.AccountChildren[id]) {
 					var parent_name = parent_select.attr('name');
