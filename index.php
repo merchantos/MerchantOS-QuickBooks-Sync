@@ -95,7 +95,7 @@ catch(Exception $e) {
 		</section>
 		
 		<section id="settings" class="<?php if ($is_authorized && !$is_setup) echo "selected"; ?>">
-		    <form>
+		    <form id="settings_form">
     			<h1>Settings</h1>		
                 <fieldset>
     				<legend>Schedule</legend>
@@ -103,7 +103,7 @@ catch(Exception $e) {
     				<ol>
     				    <li>
     			            <label for="setup_data_delay">Send Data After</label>
-            				<select id="setup_data_delay" name="setup_data_delay">
+            				<select id="setup_data_delay" name="data_delay" class="setup_field">
             					<option value="1">1 Day</option>
             					<option value="2">2 Days</option>
             					<option value="3">3 Days</option>
@@ -124,17 +124,17 @@ catch(Exception $e) {
     				<ol class="checkboxes">
     				    <li>
     				        <label>
-            					<input type="checkbox" name="enable_sales" id="setup_send_sales" checked="checked" /> Sales, Payments, and Tax
+            					<input type="checkbox" name="send_sales" id="setup_send_sales" checked="checked" class="setup_field" /> Sales, Payments, and Tax
             				</label>
                         </li>
                         <li>
     				        <label>
-    					        <input type="checkbox" name="enable_inventory" id="setup_send_inventory" checked="checked" /> Cost of Goods Sold and Inventory
+    					        <input type="checkbox" name="send_inventory" id="setup_send_inventory" checked="checked" class="setup_field" /> Cost of Goods Sold and Inventory
             				</label>
                         </li>
                         <li>
             				<label>
-            					<input type="checkbox" name="enabled_orders" id="setup_send_orders" checked="checked" /> Orders (POs)
+            					<input type="checkbox" name="send_orders" id="setup_send_orders" checked="checked" class="setup_field" /> Orders (POs)
     				        </label>
                         </li>
                     </ol>
@@ -154,34 +154,34 @@ catch(Exception $e) {
         				<div class="setup_category">
     					   <label for="setup_sales">Sales Income</label>
         				   <div class="account_select">
-        				       <select class="qb_account_list" id="setup_sales" class="setup_field" >
+        				       <select class="qb_account_list" id="setup_sales" name="sales" class="setup_field" >
         						   <option value='loading'>Loading...</option>
         					   </select>
-        					   <label><input type="checkbox" checked="checked"  class="setup_field" id="setup_sales_subaccounts" /> Create subaccounts for each Tax Class.</label>
+        					   <label><input type="checkbox" checked="checked"  class="setup_field" id="setup_sales_subaccounts" name="sales_subaccounts" /> Create subaccounts for each Tax Class.</label>
         					</div>
         				</div>
         				<div class="setup_category">
         					<label for="setup_payments">Payments</label>
         					<div class="account_select">
-        						<select class="qb_account_list" id="setup_payments" class="setup_field" >
+        						<select class="qb_account_list" id="setup_payments" class="setup_field" name="payments" >
         							<option value='loading'>Loading...</option>
         						</select>
-            					<label><input type="checkbox" checked="checked" class="setup_field" id="setup_payments_subaccounts" /> Create subaccounts for each Payment Type.</label>
+            					<label><input type="checkbox" checked="checked" class="setup_field" id="setup_payments_subaccounts" name="payments_subaccounts" /> Create subaccounts for each Payment Type.</label>
         					</div>
         				</div>
         				<div class="setup_category">
         					<label for="qb_account_list">Tax</label>
         					<div class="account_select">
-        						<select class="qb_account_list" id="setup_tax" class="setup_field" >
+        						<select class="qb_account_list" id="setup_tax" class="setup_field" name="tax" >
         							<option value='loading'>Loading...</option>
         						</select>
-        						<label><input type="checkbox" checked="checked" class="setup_field" id="setup_tax_subaccounts" /> Create subaccounts for each Sales Tax.</label>
+        						<label><input type="checkbox" checked="checked" class="setup_field" id="setup_tax_subaccounts" name="tax_subaccounts" /> Create subaccounts for each Sales Tax.</label>
             				</div>
         				</div>
         				<div class="setup_category">
         					<label for="qb_account_list">Credit Accounts</label>
         					<div class="account_select">
-        						<select class="qb_account_list" id="setup_credit_accounts" class="setup_field" >
+        						<select class="qb_account_list" id="setup_credit_accounts" class="setup_field" name="credit_accounts" >
         							<option value='loading'>Loading...</option>
         						</select>
         					</div>
@@ -189,7 +189,7 @@ catch(Exception $e) {
         				<div class="setup_category">
         					<label for="setup_gift_cards">Gift Cards</label>
         					<div class="account_select">
-        						<select class="qb_account_list" id="setup_gift_cards" class="setup_field" >
+        						<select class="qb_account_list" id="setup_gift_cards" class="setup_field" name="gift_cards" >
         							<option value='loading'>Loading...</option>
         						</select>
         					</div>
@@ -200,19 +200,19 @@ catch(Exception $e) {
     				    <div class="setup_category">
     					    <label for="setup_cogs">Cost Of Goods Sold</label>
     					    <div class="account_select">
-    						    <select class="qb_account_list" id="setup_cogs" class="setup_field" >
+    						    <select class="qb_account_list" id="setup_cogs" class="setup_field" name="cogs" >
     							    <option value='loading'>Loading...</option>
     						    </select>
-                                <label><input type="checkbox" checked="checked" class="setup_field" id="setup_cogs_subaccounts" /> Create subaccounts for each Tax Class.</label>
+                                <label><input type="checkbox" checked="checked" class="setup_field" id="setup_cogs_subaccounts" name="cogs_subaccounts" /> Create subaccounts for each Tax Class.</label>
         					</div>
     				    </div>
     				    <div class="setup_category">
     					    <label for="setup_inventory">Inventory Assets</label>
     					    <div class="account_select">
-    						    <select class="qb_account_list" id="setup_inventory" class="setup_field" >
+    						    <select class="qb_account_list" id="setup_inventory" class="setup_field" name="inventory" >
     							    <option value='loading'>Loading...</option>
     						    </select>
-    						    <label><input type="checkbox" checked="checked" class="setup_field" id="setup_inventory_subaccounts" /> Create subaccounts for each Tax Class.</label>
+    						    <label><input type="checkbox" checked="checked" class="setup_field" id="setup_inventory_subaccounts" name="inventory_subaccounts" /> Create subaccounts for each Tax Class.</label>
     					    </div>
     				    </div>
     			    </fieldset>
@@ -244,6 +244,7 @@ catch(Exception $e) {
         				</div>
     			    </fieldset>
     		    </fieldset>
+				<button type="submit">Save Settings</button>
     		</form>
 		</section>
 	</body>

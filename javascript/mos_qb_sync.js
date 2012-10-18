@@ -50,7 +50,7 @@ mosqb = {
 						}
 					});
 					$("select.qb_account_list").change(function () {
-						addSubaccounts($(this));
+						mosqb.settings.addSubaccounts($(this));
 					});
 				})
 				.error(function(error) {
@@ -64,6 +64,18 @@ mosqb = {
 				} else {
 					$("#setup_group_"+group).hide();
 				}
+			});
+			
+			$("#settings_form").submit(function () {
+				$.ajax({
+						type: "POST",
+						url: "jsonapi/SaveSettings.json.php",
+						data: $(this).serializeArray()
+					})
+					.done(function( msg ) {
+						console.log(msg);
+					});
+				return false;
 			});
 		}
 	}
