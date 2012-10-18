@@ -48,6 +48,11 @@ header p a {
     border-radius: 4px;
 }
 
+div#loading {
+	padding: 50px;
+	color: grey;
+}
+
 section {
 	display: none;
 	padding: 15px;

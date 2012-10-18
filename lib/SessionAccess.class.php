@@ -27,6 +27,13 @@ class SessionAccess
 		}
 		return false;
 	}
+	function __unset($name)
+	{
+		if (isset($_SESSION[$this->type][$name]))
+		{
+			unset($_SESSION[$this->type][$name]);
+		}
+	}
 	function getArray()
 	{
 		return $_SESSION[$this->type];

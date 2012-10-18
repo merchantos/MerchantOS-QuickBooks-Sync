@@ -25,23 +25,19 @@ function returnOutput($output)
 
 try
 {
-	$old_settings = $setup_sess_access->getArray();
-	foreach ($old_settings as $old_setting_name=>$old_setting_value)
+	$settings = $setup_sess_access->getArray();
+	if (!$settings)
 	{
-		if (!isset($_POST[$old_setting_name]))
-		{
-			unset($setup_sess_access->{$old_setting_name});
-		}
+		$settings = array();
 	}
-	foreach ($_POST as $setting_name=>$setting_value)
+	
+	$settings_json = array();
+	foreach ($settings as $name=>$value)
 	{
-		if ($setting_value == "0") {
-			unset($setup_sess_access->{$setting_name});
-			continue;
-		}
-		$setup_sess_access->{$setting_name} = $setting_value;
+		$settings_json[] = "\"$name\":\"$value\"";
 	}
-	echo returnOutput("{\"success\":true}");
+	
+	echo returnOutput("{" . join(",",$settings_json) . "}");
 }
 catch (Exception $e)
 {

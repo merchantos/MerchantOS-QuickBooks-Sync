@@ -26,26 +26,42 @@ function returnOutput($output)
 
 try
 {
-	$ianywhere = new IntuitAnywhere($qb_sess_access);
-	$ianywhere->initOAuth($oauth_sess_access,INTUIT_DISPLAY_NAME,INTUIT_CALLBACK_URL,$_OAUTH_INTUIT_CONFIG,false); // false = not interactive, fail if OAuth needs authorization
+	$accounts_json = false;
 	
-	// Get a list of accounts
-	require_once("../IntuitAnywhere/Account.class.php");
-	$ia_account = new IntuitAnywhere_Account($ianywhere);
-	
-	$filters = array();
-	if ($_GET['AccountParentId'])
+	if (isset($qb_sess_access->chart_of_accounts))
 	{
-		$filters['AccountParentId'] =  $_GET['AccountParentId'];
+		$chart_of_accounts = $qb_sess_access->chart_of_accounts;
+		if (time() - $chart_of_accounts['updated'] < 600)
+		{
+			$accounts_json = $chart_of_accounts['json']; // let the cache expire after 10 minutes
+		}
 	}
 	
-	$accounts = $ia_account->listAll($filters);
-	
-	$accounts_json = array();
-	
-	foreach ($accounts as $account)
+	if (!$accounts_json)
 	{
-		$accounts_json[] = "{\"Id\":\"" . $account->Id . "\",\"Name\":\"" . $account->Name . "\",\"Subtype\":\"" . $account->Subtype . "\",\"AccountParentId\":\"" . $account->AccountParentId . "\"}";
+		$ianywhere = new IntuitAnywhere($qb_sess_access);	
+		$ianywhere->initOAuth($oauth_sess_access,INTUIT_DISPLAY_NAME,INTUIT_CALLBACK_URL,$_OAUTH_INTUIT_CONFIG,false); // false = not interactive, fail if OAuth needs authorization
+		
+		// Get a list of accounts
+		require_once("../IntuitAnywhere/Account.class.php");
+		$ia_account = new IntuitAnywhere_Account($ianywhere);
+		
+		$filters = array();
+		if ($_GET['AccountParentId'])
+		{
+			$filters['AccountParentId'] =  $_GET['AccountParentId'];
+		}
+		
+		$accounts = $ia_account->listAll($filters);
+		
+		$accounts_json = array();
+		
+		foreach ($accounts as $account)
+		{
+			$accounts_json[] = "{\"Id\":\"" . $account->Id . "\",\"Name\":\"" . $account->Name . "\",\"Subtype\":\"" . $account->Subtype . "\",\"AccountParentId\":\"" . $account->AccountParentId . "\"}";
+		}
+		
+		$qb_sess_access->chart_of_accounts = array("updated"=>time(),"json"=>$accounts_json);
 	}
 	echo returnOutput("[" . join(",",$accounts_json) . "]");
 }

@@ -86,18 +86,19 @@ catch(Exception $e) {
 	    </header>
 	    <p>
 
+		<div id="loading"><img src="images/loading.gif" height="16" width="16" border="0"> loading your data...</div>
 
-		<section id="welcome" class="<?php if (!$is_authorized) echo "selected"; ?>">
+		<section id="welcome" class="<?php if (!$is_authorized) echo "selected"; ?>" style="display: none;">
 			<h1>Welcome</h1>
 			<p>To get started we'll need access to your QuickBooks data.</p>
 			<a href="./oauth.php" class="button">Get Started &rarr;</a>
 		</section>
 		
-		<section id="dashboard" class="<?php if ($is_authorized && $is_setup) echo "selected"; ?>">
+		<section id="dashboard" class="<?php if ($is_authorized && $is_setup) echo "selected"; ?>" style="display: none;">
 			<h1>Dashboard</h1>
 		</section>
 		
-		<section id="settings" class="<?php if ($is_authorized && !$is_setup) echo "selected"; ?>">
+		<section id="settings" class="<?php if ($is_authorized && !$is_setup) echo "selected"; ?>" style="display: none;">
 		    <form id="settings_form">
     			<h1>Settings</h1>		
                 <fieldset>
