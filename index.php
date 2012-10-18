@@ -97,7 +97,7 @@ catch(Exception $e) {
     			<h1>Dashboard</h1>
 			    <nav>
 			        <ul>
-			            <li><a href="#settings">Settings</a></li>
+			            <li><a href="#settings">Sync Settings</a></li>
 			        </ul>
 			    </nav>
 			</header>
@@ -107,15 +107,15 @@ catch(Exception $e) {
 			    <dt>October 17, 2012 at 4:13pm</dt>
 			    <dd>Synced 11 sales, 3 purchase orders and turtledove in a pear tree</dd>
 			    <dt>October 16, 2012 at 4:16pm</dt>
-			    <dd>Synced 16 sales, 3 purchase orders and turtledove in a pear tree</dd>
+			    <dd>Synced 16 sales, 3 purchase orders and calling bird</dd>
 			    <dt>October 15, 2012 at 4:22pm</dt>
-			    <dd>Synced 28 sales, 3 purchase orders and turtledove in a pear tree</dd>
+			    <dd>Synced 28 sales, 3 purchase orders and some french hens</dd>
 			    <dt>October 14, 2012 at 4:01pm</dt>
 			    <dd>Synced - no records</dd>
 			    <dt>October 13, 2012 at 4:36pm</dt>
-			    <dd>Synced 92 sales, 3 purchase orders and turtledove in a pear tree</dd>
+			    <dd>Synced 92 sales, 3 purchase orders and seven geese a laying</dd>
 			    <dt>October 12, 2012 at 4:12pm</dt>
-			    <dd>Synced 12 sales, 1 purchase orders and turtledove in a pear tree</dd>
+			    <dd>Synced 12 sales, 1 purchase orders and many lords a leaping</dd>
 			</dl>
 		</section>
 		

@@ -65,20 +65,18 @@ section header nav {
     float: right;
     margin: 0 0;
 }
-section header nav ul { display: inline; }
+section header nav ul { display: inline; margin: 0; }
 section header nav li { display: inline; }
 section header nav a {
-    float: left;
-    margin: 9px 0 0 45px;
-    background-color: #eee;
-    color: #666;
+    float: right;
+    margin: 9px 0 0;
     display: block;
     padding: 8px 10px;
     font-size: .8em;
-    text-decoration: none;
+    color: #3B73B9;
 }
 section header nav a:hover {
-    background-color: #ccc;
+    background-color: #eee;
 }
 section header h1 {
     float: left;
