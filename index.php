@@ -55,7 +55,7 @@ try
 		$user = $qb_sess_access->CurrentUser;
 		$is_authorized = true;
 	}
-	if ($setup_sess_access->setupComplete)
+	if (isset($setup_sess_access->data_delay))
 	{
 		$is_setup = true;
 	}
