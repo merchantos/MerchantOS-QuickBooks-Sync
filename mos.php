@@ -1,7 +1,8 @@
 <?
-include_once("config.inc.php");
+require_once("config.inc.php");
+require_once("MerchantOS/Accounting.class.php");
 
-require_once("lib/MOSAPICall.class.php");
+$mos_accounting = new MerchantOS_Accounting(MOS_API_KEY);
 
 // setup our credentials
 // this key is to our demo data and allows full access to just /Account/797/Item control
@@ -17,7 +18,7 @@ $sales_days = array();
 
 echo "<html><body>";
 
-$sales_by_tax_class = $mosapi->makeAPICall("Account.Reports.Accounting.TaxClassSalesByDay","Read",null,null,"xml","startDate=$start_date&endDate=$end_date");
+$sales_by_tax_class = $mos_accounting->getTaxClassSalesByDay($start_date,$end_date);
 
 echo "<table>";
 echo "<tr>";
@@ -50,7 +51,7 @@ foreach ($sales_by_tax_class as $sales_day_class)
 }
 echo "</table>";
 
-$discounts = $mosapi->makeAPICall("Account.Reports.Accounting.DiscountsByDay","Read",null,null,"xml","startDate=$start_date&endDate=$end_date");
+$discounts = $mos_accounting->getDiscountsByDay($start_date,$end_date);
 
 echo "<table>";
 echo "<tr>";
@@ -72,7 +73,7 @@ foreach ($discounts as $discount_day)
 }
 echo "</table>";
 
-$taxes_by_day = $mosapi->makeAPICall("Account.Reports.Accounting.TaxesByDay","Read",null,null,"xml","startDate=$start_date&endDate=$end_date");
+$taxes_by_day = $mos_accounting->getTaxesByDay($start_date,$end_date);
 
 echo "<table>";
 echo "<tr>";
@@ -99,7 +100,7 @@ foreach ($taxes_by_day as $tax_day)
 }
 echo "</table>";
 
-$payments = $mosapi->makeAPICall("Account.Reports.Accounting.PaymentsByDay","Read",null,null,"xml","startDate=$start_date&endDate=$end_date");
+$payments = $mos_accounting->getPaymentsByDay($start_date,$end_date);
 
 echo "<table>";
 echo "<tr>";
@@ -196,7 +197,7 @@ foreach ($unbalanced_days as $unbal_day)
 }
 echo "</ul>";
 
-$orders_by_taxclass = $mosapi->makeAPICall("Account.Reports.Accounting.OrdersByTaxClass","Read",null,null,"xml","startDate=$start_date&endDate=$end_date");
+$orders_by_taxclass = $mos_accounting->getOrdersByTaxClass($start_date,$end_date);
 
 $orders = array();
 

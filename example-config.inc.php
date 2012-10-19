@@ -1,5 +1,7 @@
 <?php
 
+set_include_path(get_include_path() . PATH_SEPARATOR . "<path to this file>");
+
 // Set the default timezone, this is required for PHP 5.3
 date_default_timezone_set('America/Los_Angeles');
 

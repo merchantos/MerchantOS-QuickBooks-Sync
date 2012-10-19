@@ -1,13 +1,10 @@
 mosqb = {
 	sections:{
 		activate: function(section_name) {
-			$("section")
-			  .hide()
-        .find('.selected')
-        .show();
-        
+			$("section").removeClass("selected").hide();
+			
 			$('#loading').show();
-      $("#"+section_name).show("selected");
+			$("#"+section_name).addClass("selected");
 			mosqb[section_name].init();
 		}
 	},
@@ -20,7 +17,7 @@ mosqb = {
 	dashboard:{
 		init: function() {
 			$('#loading').hide();
-			$('#dashboaard').show();
+			$('#dashboard').show();
 		}
 	},
 	settings:{
@@ -86,8 +83,9 @@ mosqb = {
 			
 			var accounts_promise = $.getJSON("./jsonapi/GetIntuitAccounts.json.php");
 			var settings_promise = $.getJSON("./jsonapi/LoadSettings.json.php");
+			var shops_promise = $.getJSON("./jsonapi/GetMerchantOSShops.json.php");
 			
-			$.when(accounts_promise,settings_promise).done(function (accounts_data,settings_data) {
+			$.when(accounts_promise,settings_promise,shops_promise).done(function (accounts_data,settings_data,shops_data) {
 				$("select.qb_account_list option").remove();
 				$.each(accounts_data[0],function(i,account) {
 					if (account.AccountParentId>0) {
@@ -99,6 +97,11 @@ mosqb = {
 					} else {
 						$("select.qb_account_list").append("<option value='"+account.Id+"'>"+account.Name+"</option>");
 					}
+				});
+				
+				$("#shop_locations ol").children().remove();
+				$.each(shops_data[0],function(i,shop) {
+					$("#shop_locations ol").append('<li><label><input type="checkbox" id="setup_shop_'+shop.shopID+'" name="setup_shops['+shop.shopID+']" class="setup_field" checked="checked"> '+shop.name+'</label></li>');
 				});
 				
 				$.each(settings_data[0],function(name,value) {
@@ -132,6 +135,16 @@ mosqb = {
 							}
 						}
 					}
+					if (name === "setup_shops") {
+						$.each(value,function(shopID,value) {
+							if (value=="on" || value=="On" || value===true) {
+								$('#setup_shop_'+shopID).prop('checked',true);
+							} else {
+								$('#setup_shop_'+shopID).prop('checked',false);
+							}
+						});
+						return true; // continue
+					}
 					var field = $('#settings_form [name="'+name+'"]');
 					if (field.is(":checkbox")) {
 						if (value=="on" || value=="On" || value===true) {
@@ -142,9 +155,7 @@ mosqb = {
 					} else {
 						field.val(value);
 					}
-					if (name.slice(-6) != '_child') {
-						field.change();
-					}
+					field.change();
 					return true; // continue
 				});
 				
@@ -156,13 +167,11 @@ mosqb = {
 };
 
 $(document).ready(function() {
-  
 	var active_section = $("section.selected").attr('id');
 	mosqb[active_section].init();
 
-  $("a[href='#settings']").click(function() {
-    mosqb.sections.activate('settings');
-  });
-    
+	$("a[href='#settings']").click(function() {
+		mosqb.sections.activate('settings');
+	});
 });
 

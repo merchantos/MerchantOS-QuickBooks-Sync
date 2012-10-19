@@ -77,8 +77,8 @@ catch(Exception $e) {
 	        <h3><a href="http://merchantos.com">MerchantOS</a></h3>
             <h1>Quickbooks Sync</h1>
     		<ul class="user">
-    		    <li class="block"><?php if ($is_authorized) { echo $user['handle']; } ?></li>
-    		    <li class="logout"><a href="/logout.php">Logout</a></li>
+    		    <?php if ($is_authorized) { ?><li class="block"><?php echo $user['handle']; ?></li><?php } ?>
+    		    <li class="logout"><a href="./logout.php">Logout</a></li>
     		    <li class="return"><a href="/">Return to MerchantOS &rarr; </a></li>
     		</ul>            
 	    </header>
@@ -106,17 +106,17 @@ catch(Exception $e) {
 			<h2>History</h2>
 			<dl>
 			    <dt>October 17, 2012 at 4:13pm</dt>
-			    <dd>Synced 11 sales, 3 purchase orders and turtledove in a pear tree</dd>
+			    <dd>Synced 10/12 to 10/12 with $459 Sales, $360 Cost of Goods Sold, $385 Orders.</dd>
 			    <dt>October 16, 2012 at 4:16pm</dt>
-			    <dd>Synced 16 sales, 3 purchase orders and calling bird</dd>
+			    <dd>Synced 10/11 to 10/11 with $438 Sales, $258 Cost of Goods Sold, $392 Orders.</dd>
 			    <dt>October 15, 2012 at 4:22pm</dt>
-			    <dd>Synced 28 sales, 3 purchase orders and some french hens</dd>
+			    <dd>Synced 10/10 to 10/10 with $211 Sales, $150 Cost of Goods Sold, $0 Orders.</dd>
 			    <dt>October 14, 2012 at 4:01pm</dt>
-			    <dd>Synced - no records</dd>
+			    <dd>Synced 10/9 to 10/9 with no activity.</dd>
 			    <dt>October 13, 2012 at 4:36pm</dt>
-			    <dd>Synced 92 sales, 3 purchase orders and seven geese a laying</dd>
+			    <dd>Synced 10/8 to 10/8 with $498 Sales, $412 Cost of Goods Sold, $695 Orders.</dd>
 			    <dt>October 12, 2012 at 4:12pm</dt>
-			    <dd>Synced 12 sales, 1 purchase orders and many lords a leaping</dd>
+			    <dd>Synced 10/8 to 10/8 with $389 Sales, $263 Cost of Goods Sold, $328 Orders.</dd>
 			</dl>
 		</section>
 		
@@ -144,6 +144,12 @@ catch(Exception $e) {
     				    </li>
     				</ol>
     			</fieldset>
+				<fieldset id="shop_locations">
+					<h2>Shop Locations</h2>
+					<p>Which locations do you want to sync with QuickBooks?</p>
+					<ol class="checkboxes">
+					</ol>
+				</fieldset>
                 <fieldset class="setup_group_toggle">
                     <h2>Data</h2>
                     <p>What data do you want sent to QuickBooks.
@@ -275,7 +281,7 @@ catch(Exception $e) {
     		
     		<?php if ($is_authorized) { ?>
     		<div class="scary">
-	    	    <h3><a href="./logout.php">Disconnect From QuickBooks</a></h3>
+	    	    <h3><a href="./disconnect.php" onclick="if (!confirm('Disconnect and stop syncing with QuickBooks?')) return false; return true;">Disconnect From QuickBooks</a></h3>
 	    	    <p>Disconnecting from QuickBooks will prevent MerchantOS from syncing any data into your QuickBooks account. You can reconnect at any time.</p>
 	    	</div>
 	    	<?php } ?>

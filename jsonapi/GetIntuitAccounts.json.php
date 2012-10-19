@@ -3,12 +3,12 @@
 require_once("../config.inc.php");
 GLOBAL $_OAUTH_INTUIT_CONFIG;
 
-require_once("../lib/SessionAccess.class.php");
+require_once("lib/SessionAccess.class.php");
 
-require_once("../oauth/library/OAuthStore.php");
-require_once("../oauth/library/OAuthRequester.php");
+require_once("oauth/library/OAuthStore.php");
+require_once("oauth/library/OAuthRequester.php");
 
-require_once("../IntuitAnywhere/IntuitAnywhere.class.php");
+require_once("IntuitAnywhere/IntuitAnywhere.class.php");
 
 $qb_sess_access = new SessionAccess("qb");
 $oauth_sess_access = new SessionAccess("oauth");
@@ -28,15 +28,7 @@ try
 {
 	$accounts_json = false;
 	
-	if (isset($qb_sess_access->chart_of_accounts))
-	{
-		$chart_of_accounts = $qb_sess_access->chart_of_accounts;
-		if (time() - $chart_of_accounts['updated'] < 600)
-		{
-			$accounts_json = $chart_of_accounts['json']; // let the cache expire after 10 minutes
-		}
-	}
-	
+	$accounts_json = $qb_sess_access->getCache("accounts_json",600);
 	if (!$accounts_json)
 	{
 		$ianywhere = new IntuitAnywhere($qb_sess_access);	
@@ -61,7 +53,7 @@ try
 			$accounts_json[] = "{\"Id\":\"" . $account->Id . "\",\"Name\":\"" . $account->Name . "\",\"Subtype\":\"" . $account->Subtype . "\",\"AccountParentId\":\"" . $account->AccountParentId . "\"}";
 		}
 		
-		$qb_sess_access->chart_of_accounts = array("updated"=>time(),"json"=>$accounts_json);
+		$qb_sess_access->storeCache("accounts_json",$accounts_json);
 	}
 	echo returnOutput("[" . join(",",$accounts_json) . "]");
 }
