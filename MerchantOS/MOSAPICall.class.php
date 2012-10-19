@@ -1,6 +1,6 @@
 <?php
 
-require_once('lib/MOScURL.class.php');
+require_once('MerchantOS/MOScURL.class.php');
 
 class MOSAPICall
 {
@@ -9,10 +9,21 @@ class MOSAPICall
 	protected $_api_key;
 	protected $_account_num;
 	
-	public function __construct($api_key,$account_num)
+	public function __construct($api_key,$account_num=null)
 	{
 		$this->_api_key = $api_key;
 		$this->_account_num = $account_num;
+		
+		if (!$account_num)
+		{
+			$this->_queryAccountNum();
+		}
+	}
+	
+	protected function _queryAccountNum()
+	{
+		$xml = $this->makeAPICall("Session","Get");
+		$this->_account_num = (integer)$xml->systemCustomerID;
 	}
 	
 	public function makeAPICall($controlname,$action,$unique_id=null,$xml=null,$emitter="xml",$query_str=false)

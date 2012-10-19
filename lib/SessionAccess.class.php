@@ -38,4 +38,22 @@ class SessionAccess
 	{
 		return $_SESSION[$this->type];
 	}
+	
+	function storeCache($name,$value)
+	{
+		$_SESSION[$this->type][$name."_cache"] = array("time"=>time(),"value"=>$value);
+	}
+	function getCache($name,$timeout)
+	{
+		if (!isset($_SESSION[$this->type][$name."_cache"]))
+		{
+			return null;
+		}
+		$cache = $_SESSION[$this->type][$name."_cache"];
+		if (time() - $shops_cache['time'] < $timeout)
+		{
+			return $cache['value'];
+		}
+		return null;
+	}
 }

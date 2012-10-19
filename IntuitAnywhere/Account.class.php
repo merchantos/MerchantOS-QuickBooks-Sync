@@ -1,6 +1,6 @@
 <?php
 
-require_once("../IntuitAnywhere/DataModel.class.php");
+require_once("IntuitAnywhere/DataModel.class.php");
 
 class IntuitAnywhere_Account extends IntuitAnywhere_DataModel
 {
