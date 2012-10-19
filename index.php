@@ -76,10 +76,11 @@ catch(Exception $e) {
 	    <header>
 	        <h3><a href="http://merchantos.com">MerchantOS</a></h3>
             <h1>Quickbooks Sync</h1>
-    		<p class="user">
-    		    <?php if ($is_authorized) { echo $user['handle']; } ?>
-    		    <a href="/logout.php">Logout</a>
-    		</p>            
+    		<ul class="user">
+    		    <li class="block"><?php if ($is_authorized) { echo $user['handle']; } ?></li>
+    		    <li class="logout"><a href="/logout.php">Logout</a></li>
+    		    <li class="return"><a href="/">Return to MerchantOS &rarr; </a></li>
+    		</ul>            
 	    </header>
 
 

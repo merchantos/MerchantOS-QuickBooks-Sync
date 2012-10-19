@@ -26,24 +26,48 @@ body > header h1 {
     padding: 20px 15px 15px;
     margin: 0;
 }
-body > header p {
+body > header ul {
     float: right;
     color: #fff;
     font-size: .8em;
     font-weight: normal;
-    padding: 20px 15px 15px;
+    padding: 0;
     margin: 0;
+    list-style: none;
 }
-body > header p a {
-    font-weight: bold;
-    text-transform: uppercase;
-    font-size: .9em;
-    color: #19314C;
+body > header ul li {
+    display: inline;
+}
+body > header a, body > header .block {
     text-decoration: none;
+    float: left;
+    display: block;
+    margin: 15px 6px 0 0;
+    padding: 6px 8px;
+    color: #fff;
+}
+body > header .block {
+    opacity: .6;
+}
+body > header ul li.return a {
+    color: white;
+    margin-top: 14px;
+}
+body > header ul li.return a:hover {
+    color: #3B73B9;
+}
+body > header ul li.logout a {
+    text-transform: uppercase;
+    color: #fff;
+    font-size: .9em;
+    margin-right: 4px;
+    padding-top: 7px;
     background-color: #3B73B9;
-    padding: 5px;
-    margin-left: 6px;
-    border-radius: 4px;
+    border-radius: 2px;
+    line-height: 1;
+}
+body > header ul li.logout a:hover {
+    color: #19314C;
 }
 
 div#loading {
