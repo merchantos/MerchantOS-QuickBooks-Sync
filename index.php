@@ -1,33 +1,5 @@
 <?php
 
-/**
- * oauth-php: Example OAuth client for accessing Google Docs
- *
- * @author BBG
- *
- * 
- * The MIT License
- * 
- * 
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- * 
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- */
-
 include_once("config.inc.php");
 GLOBAL $_OAUTH_INTUIT_CONFIG;
 
@@ -41,7 +13,21 @@ include_once("IntuitAnywhere/IntuitAnywhere.class.php");
 $setup_sess_access = new SessionAccess("setup");
 $qb_sess_access = new SessionAccess("qb");
 $oauth_sess_access = new SessionAccess("oauth");
+$merchantos_sess_access = new SessionAccess("merchantos");
 
+if ($_GET['key'])
+{
+	// this is where we will eventually either create a new account or login based on a login credential of $_POST['key']
+	$merchantos_sess_access->api_key = $_GET['key'];
+	if ($_GET['return_url'])
+	{
+		$merchantos_sess_access->return_url = $_GET['return_url'];
+	}
+	if ($_GET['account'])
+	{
+		$merchantos_sess_access->api_account = $_GET['account'];
+	}
+}
 try
 {
 	$ianywhere = new IntuitAnywhere($qb_sess_access);
@@ -58,6 +44,12 @@ try
 	if (isset($setup_sess_access->data_delay))
 	{
 		$is_setup = true;
+		
+		if ($_GET['return_url'] && $_GET['return_on_setup'])
+		{
+			header ("location: " . $_GET['return_url']);
+			exit;
+		}
 	}
 }
 catch(Exception $e) {
@@ -70,7 +62,7 @@ catch(Exception $e) {
 	<head>
 		<link href="css/normalize.css" rel="stylesheet" type="text/css" />
 		<link href="css/style.css" rel="stylesheet" type="text/css" />
-		<title>MerchantOS - Quickbooks Sync</title>
+		<title>MerchantOS - QuickBooks Sync</title>
 	</head>
 	<body>
 	    <header>
@@ -79,8 +71,8 @@ catch(Exception $e) {
     		<ul class="user">
     		    <?php if ($is_authorized) { ?><li class="block"><?php echo $user['handle']; ?></li><?php } ?>
     		    <li class="logout"><a href="./logout.php">Logout</a></li>
-    		    <li class="return"><a href="/">Return to MerchantOS &rarr; </a></li>
-    		</ul>            
+    		    <li class="return"><a href="<?php echo $merchantos_sess_access->return_url; ?>">Return to MerchantOS &rarr; </a></li>
+    		</ul>
 	    </header>
 
 
@@ -152,7 +144,7 @@ catch(Exception $e) {
 				</fieldset>
                 <fieldset class="setup_group_toggle">
                     <h2>Data</h2>
-                    <p>What data do you want sent to QuickBooks.
+                    <p>What data do you want sent to QuickBooks. To turn this integration off unselect all three.
     				<ol class="checkboxes">
     				    <li>
     				        <label>
@@ -178,7 +170,7 @@ catch(Exception $e) {
 
                     <div class="labels">
                         <p class="merchantos">MerchantOS Activity</p>
-                        <p class="quickbooks">Quickbooks Account</p>
+                        <p class="quickbooks">QuickBooks Account</p>
     			    </div>
     			    <fieldset id="setup_group_sales">
             			<h3>Sales</h3>

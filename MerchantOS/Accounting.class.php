@@ -9,9 +9,9 @@ class MerchantOS_Accounting
 	 */
 	private $_mosapi;
 	
-	public function __construct($apikey)
+	public function __construct($apikey,$account_num=null)
 	{
-		$this->_mosapi = new MOSAPICall($apikey);
+		$this->_mosapi = new MOSAPICall($apikey,$account_num);
 	}
 	
 	public function getTaxClassSalesByDay($start,$end)

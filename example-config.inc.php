@@ -8,7 +8,6 @@ date_default_timezone_set('America/Los_Angeles');
 ini_set('display_errors', 'On');
 
 define("MOS_API_URL","https://api.merchantos.com/API/");
-define("MOS_API_KEY","<MerchantOS API Key>"); // todo, this won't be hard coded
 
 define("INTUIT_CONSUMER_KEY", "<oauth client key>");
 define("INTUIT_CONSUMER_SECRET", "<oauth client secrete>");

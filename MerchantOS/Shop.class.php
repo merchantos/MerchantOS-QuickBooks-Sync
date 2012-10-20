@@ -9,9 +9,9 @@ class MerchantOS_Shop
 	 */
 	private $_mosapi;
 	
-	function __construct($apikey)
+	function __construct($apikey,$account_num=null)
 	{
-		$this->_mosapi = new MOSAPICall($apikey);
+		$this->_mosapi = new MOSAPICall($apikey,$account_num);
 	}
 	
 	function listAll()

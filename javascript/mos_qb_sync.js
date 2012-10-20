@@ -159,10 +159,27 @@ mosqb = {
 					return true; // continue
 				});
 				
+				// see if we should redirect back to MOS
+				var return_url = mosqb.getParameterByName('return_url');
+				var return_on_setup = mosqb.getParameterByName('return_on_setup');
+				if (return_url && return_on_setup) {
+					window.location = return_url;
+				}
+				
 				$('#loading').hide();
 				$('#settings').show();
 			});
 		}
+	},
+	getParameterByName: function(name) {
+		name = name.replace(/[\[]/, "\\\[").replace(/[\]]/, "\\\]");
+		var regexS = "[\\?&]" + name + "=([^&#]*)";
+		var regex = new RegExp(regexS);
+		var results = regex.exec(window.location.search);
+		if(results == null)
+			return null;
+		else
+			return decodeURIComponent(results[1].replace(/\+/g, " "));
 	}
 };
 

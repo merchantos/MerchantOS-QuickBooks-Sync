@@ -386,4 +386,18 @@ class IntuitAnywhere
 			"IsVerified"=>(string)$xml->User->IsVerified
 		);
 	}
+	
+	public function getMenu()
+	{
+		$request = new OAuthRequester("https://appcenter.intuit.com/api/v1/Account/AppMenu","GET");
+		$result = $request->doRequest(0,$curl_opt);
+		
+		if ($result['code'] != 200)
+		{
+			$this->_handleError($result,"Could not get menu code.");
+			return false;
+		}
+		
+		return $result['body'];
+	}
 }

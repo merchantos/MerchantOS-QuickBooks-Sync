@@ -1,12 +1,9 @@
 <?
 require_once("config.inc.php");
 require_once("MerchantOS/Accounting.class.php");
+require_once("lib/SessionAccess.class.php");
 
-$mos_accounting = new MerchantOS_Accounting(MOS_API_KEY);
-
-// setup our credentials
-// this key is to our demo data and allows full access to just /Account/797/Item control
-$mosapi = new MOSAPICall(MOS_API_KEY,"1");
+$mos_accounting = new MerchantOS_Accounting($merchantos_sess_access->api_key,$merchantos_sess_access->api_account);
 
 $start_date = new DateTime("2012-01-01");
 $start_date = $start_date->format('c');

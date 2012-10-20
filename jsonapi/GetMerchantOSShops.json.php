@@ -1,7 +1,6 @@
 <?php
 
 require_once("../config.inc.php");
-GLOBAL $_OAUTH_INTUIT_CONFIG;
 
 require_once("lib/SessionAccess.class.php");
 require_once("MerchantOS/Shop.class.php");
@@ -21,11 +20,11 @@ function returnOutput($output)
 
 try
 {
-	$shops = $merchantos_sess_access->getCache("shops",600);
+	$shops = false;//$merchantos_sess_access->getCache("shops",600);
 	if (!$shops)
 	{
 		require_once("MerchantOS/Shop.class.php");
-		$mos_shop = new MerchantOS_Shop(MOS_API_KEY);
+		$mos_shop = new MerchantOS_Shop($merchantos_sess_access->api_key,$merchantos_sess_access->api_account);
 		$shops = $mos_shop->listAll();
 		$merchantos_sess_access->storeCache($shops);
 	}
