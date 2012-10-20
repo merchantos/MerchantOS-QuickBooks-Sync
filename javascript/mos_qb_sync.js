@@ -16,6 +16,13 @@ mosqb = {
 	},
 	dashboard:{
 		init: function() {
+			// see if we should redirect back to MOS
+			var return_url = mosqb.getParameterByName('return_url');
+			var return_on_setup = mosqb.getParameterByName('return_on_setup');
+			if (return_url && return_on_setup) {
+				window.location = return_url;
+			}
+			
 			$('#loading').hide();
 			$('#dashboard').show();
 		}
@@ -158,13 +165,6 @@ mosqb = {
 					field.change();
 					return true; // continue
 				});
-				
-				// see if we should redirect back to MOS
-				var return_url = mosqb.getParameterByName('return_url');
-				var return_on_setup = mosqb.getParameterByName('return_on_setup');
-				if (return_url && return_on_setup) {
-					window.location = return_url;
-				}
 				
 				$('#loading').hide();
 				$('#settings').show();

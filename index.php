@@ -1,33 +1,17 @@
 <?php
 
-include_once("config.inc.php");
+require_once("config.inc.php");
 GLOBAL $_OAUTH_INTUIT_CONFIG;
 
-include_once("lib/SessionAccess.class.php");
+require_once("session.php");
 
-include_once("oauth/library/OAuthStore.php");
-include_once("oauth/library/OAuthRequester.php");
-
-include_once("IntuitAnywhere/IntuitAnywhere.class.php");
+require_once("IntuitAnywhere/IntuitAnywhere.class.php");
 
 $setup_sess_access = new SessionAccess("setup");
 $qb_sess_access = new SessionAccess("qb");
 $oauth_sess_access = new SessionAccess("oauth");
 $merchantos_sess_access = new SessionAccess("merchantos");
 
-if ($_GET['key'])
-{
-	// this is where we will eventually either create a new account or login based on a login credential of $_POST['key']
-	$merchantos_sess_access->api_key = $_GET['key'];
-	if ($_GET['return_url'])
-	{
-		$merchantos_sess_access->return_url = $_GET['return_url'];
-	}
-	if ($_GET['account'])
-	{
-		$merchantos_sess_access->api_account = $_GET['account'];
-	}
-}
 try
 {
 	$ianywhere = new IntuitAnywhere($qb_sess_access);
@@ -37,18 +21,18 @@ try
 	
 	if ($ianywhere->isUserAuthorized())
 	{
-		$ianywhere->initOAuth($oauth_sess_access,INTUIT_DISPLAY_NAME,INTUIT_CALLBACK_URL,$_OAUTH_INTUIT_CONFIG,true);
 		$user = $qb_sess_access->CurrentUser;
 		$is_authorized = true;
-	}
-	if (isset($setup_sess_access->data_delay))
-	{
-		$is_setup = true;
 		
-		if ($_GET['return_url'] && $_GET['return_on_setup'])
+		if (isset($setup_sess_access->data_delay))
 		{
-			header ("location: " . $_GET['return_url']);
-			exit;
+			$is_setup = true;
+			
+			if ($_GET['return_url'] && $_GET['return_on_setup'])
+			{
+				header ("location: " . $_GET['return_url']);
+				exit;
+			}
 		}
 	}
 }
@@ -70,8 +54,7 @@ catch(Exception $e) {
             <h1>Quickbooks Sync</h1>
     		<ul class="user">
     		    <?php if ($is_authorized) { ?><li class="block"><?php echo $user['handle']; ?></li><?php } ?>
-    		    <li class="logout"><a href="./logout.php">Logout</a></li>
-    		    <li class="return"><a href="<?php echo $merchantos_sess_access->return_url; ?>">Return to MerchantOS &rarr; </a></li>
+    		    <li class="logout"><a href="<?php echo $merchantos_sess_access->return_url; if ($_GET['disconnected'] || !$ianywhere->isUserAuthorized()) echo "&disconnected=1"; ?>">Return to MerchantOS &rarr; </a></li>
     		</ul>
 	    </header>
 
@@ -110,6 +93,7 @@ catch(Exception $e) {
 			    <dt>October 12, 2012 at 4:12pm</dt>
 			    <dd>Synced 10/8 to 10/8 with $389 Sales, $263 Cost of Goods Sold, $328 Orders.</dd>
 			</dl>
+			<a href="<?php echo $merchantos_sess_access->return_url; if ($_GET['disconnected'] || !$ianywhere->isUserAuthorized()) echo "&disconnected=1"; ?>">Continue to MerchantOS &rarr; </a>
 		</section>
 		
 		<section id="settings" class="<?php if ($is_authorized && !$is_setup) echo "selected"; ?>" style="display: none;">

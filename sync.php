@@ -5,6 +5,11 @@ GLOBAL $_OAUTH_INTUIT_CONFIG;
 
 require_once("session.php");
 
+$setup_sess_access = new SessionAccess("setup");
+$qb_sess_access = new SessionAccess("qb");
+$oauth_sess_access = new SessionAccess("oauth");
+$merchantos_sess_access = new SessionAccess("merchantos");
+
 require_once("MerchantOS/Accounting.class.php");
 
 $mos_accounting = new MerchantOS_Accounting($merchantos_sess_access->api_key,$merchantos_sess_access->api_account);

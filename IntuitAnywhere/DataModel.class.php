@@ -19,6 +19,9 @@ abstract class IntuitAnywhere_DataModel
 	abstract protected function _loadFromQBOXML($xml);
 	abstract protected function _loadFromQBDXML($xml);
 	
+	abstract protected function _getXMLForQBO();
+	abstract protected function _getXMLForQBD();
+	
 	function __construct($intuit_anywhere_obj)
 	{
 		$this->ia = $intuit_anywhere_obj;

@@ -37,4 +37,13 @@ class IntuitAnywhere_Account extends IntuitAnywhere_DataModel
 	{
 		throw new Exception("Account::load from QBD XML, not implemented.");
 	}
+	
+	protected function _getXMLForQBO()
+	{
+		throw new Exception("Account::get QBO XML, not implemented.");
+	}
+	protected function _getXMLForQBD()
+	{
+		throw new Exception("Account::get QBD XML, not implemented.");
+	}
 }

@@ -5,10 +5,6 @@ class SessionAccess
 	private $type;
 	function __construct($type)
 	{
-		if (!session_id())
-		{
-			session_start();
-		}
 		$this->type = $type;
 	}
 	function __get($name)
@@ -55,5 +51,10 @@ class SessionAccess
 			return $cache['value'];
 		}
 		return null;
+	}
+	
+	function clear()
+	{
+		$_SESSION[$this->type] = array();
 	}
 }

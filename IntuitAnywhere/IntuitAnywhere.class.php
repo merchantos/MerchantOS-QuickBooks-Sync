@@ -50,6 +50,9 @@ class IntuitAnywhere
 	
 	public function initOAuth($oauth_store,$displayName,$callbackURL,$options,$interactive=true)
 	{
+		require_once("oauth/library/OAuthStore.php");
+		require_once("oauth/library/OAuthRequester.php");
+		
 		$this->displayName = $displayName;
 		$this->callbackURL = $callbackURL;
 		

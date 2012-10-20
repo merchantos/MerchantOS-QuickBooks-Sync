@@ -1,8 +1,10 @@
 <?php
 
 require_once("../config.inc.php");
+GLOBAL $_OAUTH_INTUIT_CONFIG;
 
-require_once("lib/SessionAccess.class.php");
+require_once("session.php");
+
 require_once("MerchantOS/Shop.class.php");
 
 $merchantos_sess_access = new SessionAccess("merchantos");

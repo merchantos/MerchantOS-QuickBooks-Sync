@@ -3,10 +3,7 @@
 require_once("../config.inc.php");
 GLOBAL $_OAUTH_INTUIT_CONFIG;
 
-require_once("lib/SessionAccess.class.php");
-
-require_once("oauth/library/OAuthStore.php");
-require_once("oauth/library/OAuthRequester.php");
+require_once("session.php");
 
 require_once("IntuitAnywhere/IntuitAnywhere.class.php");
 
