@@ -313,7 +313,7 @@ class IntuitAnywhere
 		if ($this->isQBO())
 		{
 			$content_type = "application/xml";
-			if ($method==="POST" && $objectID===null)
+			if ($method==="POST" && $objectID===null && $body===null)
 			{
 				$content_type = "application/x-www-form-urlencoded";
 			}

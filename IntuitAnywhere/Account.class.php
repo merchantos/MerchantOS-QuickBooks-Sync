@@ -18,19 +18,16 @@ class IntuitAnywhere_Account extends IntuitAnywhere_DataModel
 	
 	protected function _loadFromQBOXML($xml)
 	{
-		$account = new IntuitAnywhere_Account($this->ia);
-		$account->Id = (integer)$xml->Id;
-		$account->CreateTime = new DateTime((string)$xml->MetaData->CreateTime);
-		$account->LastUpdatedTime = new DateTime((string)$xml->MetaData->LastUpdatedTime);
+		$this->Id = (integer)$xml->Id;
+		$this->CreateTime = new DateTime((string)$xml->MetaData->CreateTime);
+		$this->LastUpdatedTime = new DateTime((string)$xml->MetaData->LastUpdatedTime);
 		
-		$account->Name = (string)$xml->Name;
-		$account->Desc = (string)$xml->Desc;
-		$account->Subtype = (string)$xml->Subtype;
-		$account->AcctNum = (string)$xml->AcctNum;
-		$account->CurrentBalance = (string)$xml->CurrentBalance;
-		$account->AccountParentId = (integer)$xml->AccountParentId;
-		
-		return $account;
+		$this->Name = (string)$xml->Name;
+		$this->Desc = (string)$xml->Desc;
+		$this->Subtype = (string)$xml->Subtype;
+		$this->AcctNum = (string)$xml->AcctNum;
+		$this->CurrentBalance = (string)$xml->CurrentBalance;
+		$this->AccountParentId = (integer)$xml->AccountParentId;
 	}
 	
 	protected function _loadFromQBDXML($xml)

@@ -93,7 +93,8 @@ catch(Exception $e) {
 			    <dt>October 12, 2012 at 4:12pm</dt>
 			    <dd>Synced 10/8 to 10/8 with $389 Sales, $263 Cost of Goods Sold, $328 Orders.</dd>
 			</dl>
-			<a href="<?php echo $merchantos_sess_access->return_url; if ($_GET['disconnected'] || !$ianywhere->isUserAuthorized()) echo "&disconnected=1"; ?>">Continue to MerchantOS &rarr; </a>
+			<a href="./oauth.php" class="button">Sync Now</a>
+			<a href="<?php echo $merchantos_sess_access->return_url; if ($_GET['disconnected'] || !$ianywhere->isUserAuthorized()) echo "&disconnected=1"; ?>">Return to MerchantOS &rarr; </a>
 		</section>
 		
 		<section id="settings" class="<?php if ($is_authorized && !$is_setup) echo "selected"; ?>" style="display: none;">
@@ -106,19 +107,23 @@ catch(Exception $e) {
     				    <li>
     			            <label for="setup_data_delay">Send Data After</label>
             				<select id="setup_data_delay" name="data_delay" class="setup_field">
-            					<option value="1">1 Day</option>
-            					<option value="2">2 Days</option>
-            					<option value="3">3 Days</option>
-            					<option value="4">4 Days</option>
-            					<option value="5">5 Days</option>
-            					<option value="6">6 Days</option>
-            					<option value="7">1 Week</option>
-            					<option value="14">2 Weeks</option>
-            					<option value="21">3 Weeks</option>
-            					<option value="month">1 Month</option>
+            					<option value="-1 day">1 Day</option>
+            					<option value="-2 days">2 Days</option>
+            					<option value="-3 days">3 Days</option>
+            					<option value="-4 days">4 Days</option>
+            					<option value="-5 days">5 Days</option>
+            					<option value="-6 days">6 Days</option>
+            					<option value="-1 week">1 Week</option>
+            					<option value="-2 weeks">2 Weeks</option>
+            					<option value="-3 weeks">3 Weeks</option>
+            					<option value="-1 month">1 Month</option>
             				</select>
     				    </li>
     				</ol>
+					<br />
+					<p>What date would you like to go back to for data sent to QuickBooks?</p>
+    				<label for="setup_start_date">Starting From</label>
+            		<input type="input" id="setup_start_date" name="start_date" value="2012-10-01" size="10" />
     			</fieldset>
 				<fieldset id="shop_locations">
 					<h2>Shop Locations</h2>
@@ -165,7 +170,15 @@ catch(Exception $e) {
         				       <select data-placeholder="Choose a category" class="qb_account_list" id="setup_sales" name="sales" >
         						   <option value='loading'>Loading...</option>
         					   </select>
-        					   <label><input type="checkbox" checked="checked"  class="setup_field" id="setup_sales_subaccounts" name="sales_subaccounts" /> Create subaccounts for each Tax Class.</label>
+        					   <!--<label><input type="checkbox" checked="checked"  class="setup_field" id="setup_sales_subaccounts" name="sales_subaccounts" /> Create subaccounts for each Tax Class.</label>-->
+        					</div>
+        				</div>
+						<div class="setup_category">
+        					<label for="setup_payments">Discounts</label>
+        					<div class="account_select">
+        						<select class="qb_account_list" id="setup_discounts" name="discounts" >
+        							<option value='loading'>Loading...</option>
+        						</select>
         					</div>
         				</div>
         				<div class="setup_category">
@@ -174,7 +187,7 @@ catch(Exception $e) {
         						<select class="qb_account_list" id="setup_payments" name="payments" >
         							<option value='loading'>Loading...</option>
         						</select>
-            					<label><input type="checkbox" checked="checked" class="setup_field" id="setup_payments_subaccounts" name="payments_subaccounts" /> Create subaccounts for each Payment Type.</label>
+            					<!--<label><input type="checkbox" checked="checked" class="setup_field" id="setup_payments_subaccounts" name="payments_subaccounts" /> Create subaccounts for each Payment Type.</label>-->
         					</div>
         				</div>
         				<div class="setup_category">
@@ -183,7 +196,7 @@ catch(Exception $e) {
         						<select class="qb_account_list" id="setup_tax" name="tax" >
         							<option value='loading'>Loading...</option>
         						</select>
-        						<label><input type="checkbox" checked="checked" class="setup_field" id="setup_tax_subaccounts" name="tax_subaccounts" /> Create subaccounts for each Sales Tax.</label>
+        						<!--<label><input type="checkbox" checked="checked" class="setup_field" id="setup_tax_subaccounts" name="tax_subaccounts" /> Create subaccounts for each Sales Tax.</label>-->
             				</div>
         				</div>
         				<div class="setup_category">
@@ -211,7 +224,7 @@ catch(Exception $e) {
     						    <select class="qb_account_list" id="setup_cogs" class="setup_field" name="cogs" >
     							    <option value='loading'>Loading...</option>
     						    </select>
-                                <label><input type="checkbox" checked="checked" class="setup_field" id="setup_cogs_subaccounts" name="cogs_subaccounts" /> Create subaccounts for each Tax Class.</label>
+                                <!--<label><input type="checkbox" checked="checked" class="setup_field" id="setup_cogs_subaccounts" name="cogs_subaccounts" /> Create subaccounts for each Tax Class.</label>-->
         					</div>
     				    </div>
     				    <div class="setup_category">
@@ -220,7 +233,7 @@ catch(Exception $e) {
     						    <select class="qb_account_list" id="setup_inventory" class="setup_field" name="inventory" >
     							    <option value='loading'>Loading...</option>
     						    </select>
-    						    <label><input type="checkbox" checked="checked" class="setup_field" id="setup_inventory_subaccounts" name="inventory_subaccounts" /> Create subaccounts for each Tax Class.</label>
+    						    <!--<label><input type="checkbox" checked="checked" class="setup_field" id="setup_inventory_subaccounts" name="inventory_subaccounts" /> Create subaccounts for each Tax Class.</label>-->
     					    </div>
     				    </div>
     			    </fieldset>
@@ -229,7 +242,7 @@ catch(Exception $e) {
     				    <div class="setup_category">
     					    <label for="setup_orders">Orders Expense</label>
         					<div class="account_select">
-        						<select class="qb_account_list" id="setup_orders" class="setup_field" >
+        						<select class="qb_account_list" id="setup_orders" class="setup_field" name="orders" >
         							<option value='loading'>Loading...</option>
         						</select>
         					</div>
@@ -237,7 +250,7 @@ catch(Exception $e) {
         				<div class="setup_category">
         					<label for="setup_orders_shipping">Shipping Expense</label>
         					<div class="account_select">
-        						<select class="qb_account_list" id="setup_orders_shipping" class="setup_field" >
+        						<select class="qb_account_list" id="setup_orders_shipping" class="setup_field" name="orders_shipping" >
         							<option value='loading'>Loading...</option>
         						</select>
         					</div>
@@ -245,7 +258,7 @@ catch(Exception $e) {
         				<div class="setup_category">
         					<label for="setup_orders_other">Other Expense</label>
         					<div class="account_select">
-        						<select class="qb_account_list" id="setup_orders_other" class="setup_field" >
+        						<select class="qb_account_list" id="setup_orders_other" class="setup_field" name="orders_other" >
         							<option value='loading'>Loading...</option>
         						</select>
         					</div>
@@ -253,6 +266,7 @@ catch(Exception $e) {
     			    </fieldset>
     		    </fieldset>
 				<input type="submit" value="Save Settings" class="submit" />
+				<?php if ($is_setup) { ?><a href="javascript: mosqb.sections.activate('dashboard');">Cancel</a><?php } ?>
     		</form>
     		
     		<?php if ($is_authorized) { ?>

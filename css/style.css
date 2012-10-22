@@ -116,6 +116,7 @@ section header h1 {
 	text-align: center;
 	text-decoration: none;
 	font: 16px/100% Arial, Helvetica, sans-serif;
+	margin: 0 10px 0 0;
 	padding: .65em 2em .55em;
 	text-shadow: 0 1px 1px rgba(0,0,0,.3);
 	-webkit-border-radius: .5em; 
@@ -247,10 +248,11 @@ label {
 input[type='submit'] {
     border: 1px solid #AAA;
     border-radius: 5px;
-    padding: 4px 8px;
-    font-size: 13px;
+    padding: 10px 12px 8px 12px;
+    font-size: 14px;
+    font-weight: bold;
     color: #444;
-    margin: 1em 0 2em;
+    margin: 1em 1em 2em;
     
     background-image: -webkit-linear-gradient(top, white 20%, #F6F6F6 50%, #EEE 52%, #F4F4F4 100%);
     background-image: -moz-linear-gradient(top, white 20%, #F6F6F6 50%, #EEE 52%, #F4F4F4 100%);

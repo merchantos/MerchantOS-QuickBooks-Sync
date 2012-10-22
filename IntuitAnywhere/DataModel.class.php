@@ -5,7 +5,7 @@ abstract class IntuitAnywhere_DataModel
 	public $Id;
 	public $SyncToken;
 	public $CreateTime;
-	public $LastUPdatedTime;
+	public $LastUpdatedTime;
 	/**
 	 * @var IntuitAnywhere
 	 */
@@ -52,6 +52,27 @@ abstract class IntuitAnywhere_DataModel
 		return $this->_saveQBD();
 	}
 	
+	protected function _listAllDBD($filters)
+	{
+		throw new Exception("_listAllDBD: not implemented.");
+	}
+	
+	protected function _saveQBD()
+	{
+		throw new Exception("_saveQBD: not implemented.");
+	}
+	
+	protected function _saveQBO()
+	{
+		$xml = $this->_getXMLForQBO();
+		
+		$result = $this->ia->query($this->_getQBOObjectName(),null,"POST",null,$xml);
+		
+		$result_xml = new SimpleXMLElement($result);
+		
+		$this->_loadFromQBOXML($result_xml);
+	}
+	
 	protected function _listAllQBO($filters)
 	{
 		$page = 1;
@@ -71,6 +92,8 @@ abstract class IntuitAnywhere_DataModel
 			}
 		}
 		
+		$classname = get_class($this);
+		
 		while (true)
 		{
 			$result = $this->ia->query($this->_getQBDObjectNamePlural(),null,"POST",$params,$body);
@@ -87,7 +110,9 @@ abstract class IntuitAnywhere_DataModel
 			
 			foreach ($qbo_xml->CdmCollections->children() as $child)
 			{
-				$objects[] = $this->_loadFromQBOXML($child);
+				$object = new $classname($this->ia);
+				$object->_loadFromQBOXML($child);
+				$objects[] = $object;
 			}
 			
 			if ($count<$per_page)

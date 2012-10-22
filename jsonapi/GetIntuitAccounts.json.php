@@ -32,7 +32,7 @@ try
 		$ianywhere->initOAuth($oauth_sess_access,INTUIT_DISPLAY_NAME,INTUIT_CALLBACK_URL,$_OAUTH_INTUIT_CONFIG,false); // false = not interactive, fail if OAuth needs authorization
 		
 		// Get a list of accounts
-		require_once("../IntuitAnywhere/Account.class.php");
+		require_once("IntuitAnywhere/Account.class.php");
 		$ia_account = new IntuitAnywhere_Account($ianywhere);
 		
 		$filters = array();

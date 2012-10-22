@@ -4,7 +4,6 @@ require_once("IntuitAnywhere/DataModel.class.php");
 
 class IntuitAnywhere_JournalEntryLine extends IntuitAnywhere_DataModel
 {
-	public $Id;
 	public $Desc;
 	public $Amount;
 	public $PostingType;
@@ -16,9 +15,17 @@ class IntuitAnywhere_JournalEntryLine extends IntuitAnywhere_DataModel
 	protected function _getQBDObjectName() { new Exception("JournalEntryLine can not be queried individually."); }
 	protected function _getQBDObjectNamePlural() { new Exception("JournalEntryLine can not be queried individually."); }
 	
+	public function loadFromQBOXML($xml)
+	{
+		return $this->_loadFromQBOXML($xml);
+	}
 	protected function _loadFromQBOXML($xml)
 	{
-		throw new Exception("JournalEntryLine::load from QBO XML, not implemented.");
+		$this->Desc = (string)$xml->Desc;
+		$this->Amount = (float)$xml->Amount;
+		$this->PostingType = (string)$xml->PostingType;
+		$this->AccountId = (integer)$xml->AccountId;
+		$this->EntityId = (integer)$xml->EntityId;
 	}
 	
 	protected function _loadFromQBDXML($xml)
@@ -33,7 +40,7 @@ class IntuitAnywhere_JournalEntryLine extends IntuitAnywhere_DataModel
 	protected function _getXMLForQBO()
 	{
 		$desc = $this->Desc;
-		$amount = $this->Amount;
+		$amount = number_format(round($this->Amount,2),2);
 		$postingtype = $this->PostingType;
 		$accountid = $this->AccountId;
 		$entity = "";
@@ -66,6 +73,7 @@ class IntuitAnywhere_JournalEntry extends IntuitAnywhere_DataModel
 {
 	public $HeaderTxnDate;
 	public $HeaderNote;
+	public $HeaderAdjustment = "false";
 	/**
 	 * @var array Array of IntuitAnywhere_JournalEntryLine
 	 */
@@ -78,8 +86,25 @@ class IntuitAnywhere_JournalEntry extends IntuitAnywhere_DataModel
 	
 	protected function _loadFromQBOXML($xml)
 	{
-		throw new Exception("JournalEntry::load from QBO XML, not implemented.");
+		$this->Id = (integer)$xml->Id;
+		$this->SyncToken = (integer)$xml->SyncToken;
+		$this->CreateTime = new DateTime((string)$xml->MetaData->CreateTime);
+		$this->LastUpdatedTime = new DateTime((string)$xml->MetaData->LastUpdatedTime);
+		
+		$this->Adjustment = (string)$xml->Header->Adjustment;
+		$this->Note = (string)$xml->Header->Note;
+		$this->HeaderTxnDate = new DateTime((string)$xml->Header->TxnDate);
+		$this->Lines = array();
+		foreach ($xml->Line as $linexml)
+		{
+			$line = new IntuitAnywhere_JournalEntryLine($this->ia);
+			$line->loadFromQBOXML($xml);
+			$this->Lines[] = $line;
+		}
+		
+		return;
 	}
+	
 	
 	protected function _loadFromQBDXML($xml)
 	{
@@ -95,17 +120,18 @@ class IntuitAnywhere_JournalEntry extends IntuitAnywhere_DataModel
 		$lines = "";
 		foreach ($this->Lines as $jeline)
 		{
-			$lines[] = $jeline->getXMLForQBO();
+			$lines .= $jeline->getXMLForQBO();
 		}
 		$txndate = $this->HeaderTxnDate->format('Y-m-d-H:i:s');
 		$note = $this->HeaderNote;
+		$adjustment = $this->HeaderAdjustment;
 		return <<<JOURNALENTRYQBOCREATE
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <JournalEntry xmlns="http://www.intuit.com/sb/cdm/v2" xmlns:qbp="http://www.intuit.com/sb/cdm/qbopayroll/v1" xmlns:qbo="http://www.intuit.com/sb/cdm/qbo">
 	<Header>
 		<TxnDate>$txndate</TxnDate>
 		<Note>$note</Note>
-		<Adjustment>false</Adjustment>
+		<Adjustment>$adjustment</Adjustment>
 	</Header>
 	$lines
 </JournalEntry>

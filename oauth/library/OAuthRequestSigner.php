@@ -133,6 +133,7 @@ class OAuthRequestSigner extends OAuthRequest
 		$this->setParam('oauth_consumer_key',	 $secrets['consumer_key']);
 		$this->setParam('oauth_version',		 '1.0');
 		
+		/*
 		$body = $this->getBody();
 		if (!is_null($body))
 		{
@@ -140,6 +141,7 @@ class OAuthRequestSigner extends OAuthRequest
 			$body_signature = $this->calculateDataSignature($body, $secrets['consumer_secret'], $token_secret, $signature_method);
 			$this->setParam('xoauth_body_signature', $body_signature, true);
 		}
+		*/
 		
 		$signature = $this->calculateSignature($secrets['consumer_secret'], $token_secret, $token_type);
 		$this->setParam('oauth_signature',	$signature, true);
