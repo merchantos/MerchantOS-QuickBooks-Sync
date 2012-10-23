@@ -40,7 +40,7 @@ class IntuitAnywhere_JournalEntryLine extends IntuitAnywhere_DataModel
 	protected function _getXMLForQBO()
 	{
 		$desc = $this->Desc;
-		$amount = number_format(round($this->Amount,2),2);
+		$amount = $this->Amount;
 		$postingtype = $this->PostingType;
 		$accountid = $this->AccountId;
 		$entity = "";
@@ -98,7 +98,7 @@ class IntuitAnywhere_JournalEntry extends IntuitAnywhere_DataModel
 		foreach ($xml->Line as $linexml)
 		{
 			$line = new IntuitAnywhere_JournalEntryLine($this->ia);
-			$line->loadFromQBOXML($xml);
+			$line->loadFromQBOXML($linexml);
 			$this->Lines[] = $line;
 		}
 		

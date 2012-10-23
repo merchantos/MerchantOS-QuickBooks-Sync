@@ -5,8 +5,6 @@ GLOBAL $_OAUTH_INTUIT_CONFIG;
 
 require_once("session.php");
 
-require_once("IntuitAnywhere/IntuitAnywhere.class.php");
-
 $setup_sess_access = new SessionAccess("setup");
 
 header("Content-Type: application/json");

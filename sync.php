@@ -299,6 +299,7 @@ try
 	echo "</ul>";
 	*/
 	
+	/*
 	$orders_by_taxclass = $mos_accounting->getOrdersByTaxClass($start_date,$end_date);
 	
 	$orders = array();
@@ -337,6 +338,7 @@ try
 	}
 	
 	echo "</body></html>";
+	*/
 }	
 catch(Exception $e)
 {

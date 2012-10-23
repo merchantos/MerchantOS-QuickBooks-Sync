@@ -23,8 +23,27 @@ mosqb = {
 				window.location = return_url;
 			}
 			
-			$('#loading').hide();
-			$('#dashboard').show();
+			$.when(mosqb.dashboard.loadLog()).done(function(data) {
+				$('#loading').hide();
+				$('#dashboard').show();
+			});
+		},
+		syncNow: function () {
+			$.getJSON("./jsonapi/SyncNow.json.php").success(function (data) {
+				mosqb.dashboard.loadLog();
+			});
+		},
+		loadLog: function() {
+			return $.getJSON("./jsonapi/LoadLog.json.php").success(function (data) {
+				$("#dashboard dl").children().remove();
+				if (data.length == 0) {
+					$("#dashboard dl").append("<dt>No Events</dt><dd>Hit 'Sync Now' if you'd like to get started pushing your data</dt>");
+				} else {
+					$.each(data,function(i,value) {
+						$("#dashboard dl").append("<dt>" + value['date'] + "</dt><dd>" + value['msg'] + "</dd>");
+					});
+				}
+			});
 		}
 	},
 	settings:{
@@ -189,6 +208,10 @@ $(document).ready(function() {
 
 	$("a[href='#settings']").click(function() {
 		mosqb.sections.activate('settings');
+	});
+	
+	$("a[href='#syncnow']").click(function () {
+		mosqb.dashboard.syncNow();
 	});
 });
 

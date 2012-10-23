@@ -80,20 +80,9 @@ catch(Exception $e) {
 			
 			<h2>History</h2>
 			<dl>
-			    <dt>October 17, 2012 at 4:13pm</dt>
-			    <dd>Synced 10/12 to 10/12 with $459 Sales, $360 Cost of Goods Sold, $385 Orders.</dd>
-			    <dt>October 16, 2012 at 4:16pm</dt>
-			    <dd>Synced 10/11 to 10/11 with $438 Sales, $258 Cost of Goods Sold, $392 Orders.</dd>
-			    <dt>October 15, 2012 at 4:22pm</dt>
-			    <dd>Synced 10/10 to 10/10 with $211 Sales, $150 Cost of Goods Sold, $0 Orders.</dd>
-			    <dt>October 14, 2012 at 4:01pm</dt>
-			    <dd>Synced 10/9 to 10/9 with no activity.</dd>
-			    <dt>October 13, 2012 at 4:36pm</dt>
-			    <dd>Synced 10/8 to 10/8 with $498 Sales, $412 Cost of Goods Sold, $695 Orders.</dd>
-			    <dt>October 12, 2012 at 4:12pm</dt>
-			    <dd>Synced 10/8 to 10/8 with $389 Sales, $263 Cost of Goods Sold, $328 Orders.</dd>
+			    <dt>Loading...</dt>
 			</dl>
-			<a href="./oauth.php" class="button">Sync Now</a>
+			<a href="#syncnow" class="button">Sync Now</a>
 			<a href="<?php echo $merchantos_sess_access->return_url; if ($_GET['disconnected'] || !$ianywhere->isUserAuthorized()) echo "&disconnected=1"; ?>">Return to MerchantOS &rarr; </a>
 		</section>
 		
