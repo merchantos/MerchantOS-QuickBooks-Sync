@@ -49,6 +49,8 @@ catch(Exception $e) {
 		<title>MerchantOS - QuickBooks Sync</title>
 	</head>
 	<body>
+		<ipp:blueDot></ipp:blueDot>
+	
 	    <header>
 	        <h3><a href="http://merchantos.com">MerchantOS</a></h3>
             <h1>Quickbooks Sync</h1>
@@ -268,5 +270,14 @@ catch(Exception $e) {
 
         <script src="javascript/jquery-1.8.2.min.js" type="text/javascript"></script>
 		<script src="javascript/mos_qb_sync.js" type="text/javascript"></script>
+		<?php if ($is_authorized) { ?>
+			<script type="text/javascript" src="https://appcenter.intuit.com/Content/IA/intuit.ipp.anywhere.js"></script>
+			<script>
+			intuit.ipp.anywhere.setup({
+				menuProxy: '/QuickBooks/menuproxy.php',
+				grantUrl: '/QuickBooks/'
+			});
+			</script>
+		<?php } ?>
 	</body>
 </html>

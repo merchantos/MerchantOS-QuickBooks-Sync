@@ -113,10 +113,10 @@ class Sync_MerchantOStoQuickBooks {
 		{
 			foreach ($sales_day_shop as $date=>$sales_data)
 			{
-				$sales_total = $this->_getSalesTotal($sales_data);
-				$discounts_total = $this->_getDiscountsTotal($sales_data);
-				$tax_total = $this->_getTaxTotal($sales_data);
-				$payments_total = $this->_getPaymentsTotal($sales_data);
+				$sales_total = round($this->_getSalesTotal($sales_data),2);
+				$discounts_total = round($this->_getDiscountsTotal($sales_data),2);
+				$tax_total = round($this->_getTaxTotal($sales_data),2);
+				$payments_total = round($this->_getPaymentsTotal($sales_data),2);
 				
 				$balance = 0;
 				$balance += $sales_total;
@@ -143,7 +143,7 @@ class Sync_MerchantOStoQuickBooks {
 				
 				if ($this->_send_cogs)
 				{
-					$cogs_total = $this->_getCOGSTotal($sales_data);
+					$cogs_total = round($this->_getCOGSTotal($sales_data),2);
 					if ($this->_sendCOGS($date,$sales_data))
 					{
 						$logs[] = array("date"=>$date,"msg"=>"Sent $cogs_total in COGS.");

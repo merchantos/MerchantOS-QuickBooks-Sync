@@ -7,7 +7,7 @@ body > header {
     z-index: 1000;
     background-color: #19314C;
     overflow: hidden;
-    padding: 0;
+    padding: 20px 0 0 0;
 }
 body > header h3 {
     background: url(../images/merchantos.png) no-repeat;
@@ -306,3 +306,7 @@ dl dt {
 //  clear: left;
 }
 dl dd { margin-left: 180px; min-height: 1.35em; }
+
+#intuitPlatformAppMenu {
+    right: 2px !important;
+}
