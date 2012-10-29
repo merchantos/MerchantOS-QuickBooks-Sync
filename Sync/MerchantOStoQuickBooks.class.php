@@ -103,7 +103,7 @@ class Sync_MerchantOStoQuickBooks {
 		
 		if (count($this->_days_buffer)==0)
 		{
-			return array(array("date"=>date_format(new DateTime(),"Y-m-d")),"msg"=>"No records to sync.");
+			return array(array("date"=>date_format(new DateTime(),"m/d/Y")),"msg"=>"No records to sync.");
 		}
 		
 		require_once("IntuitAnywhere/JournalEntry.class.php");
@@ -125,7 +125,7 @@ class Sync_MerchantOStoQuickBooks {
 				$balance -= $payments_total;
 				if (round($balance)!=0)
 				{
-					$logs[] = array("date"=>$date,"msg"=>"Records contained unbalanced sales.");
+					$logs[] = array("date"=>$date,"msg"=>"Records contained unbalanced sales.","imported"=>false);
 					continue;
 				}
 				
@@ -133,11 +133,11 @@ class Sync_MerchantOStoQuickBooks {
 				{
 					if ($this->_sendSales($date,$sales_data))
 					{
-						$logs[] = array("date"=>$date,"msg"=>"Sent $sales_total Sales, $discounts_total Discounts, $tax_total Tax, $payments_total Payments.");
+						$logs[] = array("date"=>$date,"msg"=>"Sent \$$sales_total Sales, \$$discounts_total Discounts, \$$tax_total Tax, \$$payments_total Payments.","imported"=>true);
 					}
 					else
 					{
-						$logs[] = array("date"=>$date,"msg"=>"$0 in Sales.");
+						$logs[] = array("date"=>$date,"msg"=>"$0 in Sales.","imported"=>true);
 					}
 				}
 				
@@ -146,11 +146,11 @@ class Sync_MerchantOStoQuickBooks {
 					$cogs_total = round($this->_getCOGSTotal($sales_data),2);
 					if ($this->_sendCOGS($date,$sales_data))
 					{
-						$logs[] = array("date"=>$date,"msg"=>"Sent $cogs_total in COGS.");
+						$logs[] = array("date"=>$date,"msg"=>"Sent \$$cogs_total in Cost of Goods Sold.","imported"=>true);
 					}
 					else
 					{
-						$logs[] = array("date"=>$date,"msg"=>"$0 in COGS.");
+						$logs[] = array("date"=>$date,"msg"=>"$0 in COGS.","imported"=>true);
 					}
 				}
 			}

@@ -3,7 +3,7 @@
 require_once("../config.inc.php");
 GLOBAL $_OAUTH_INTUIT_CONFIG;
 
-require_once("session.php");
+require_once("session.inc.php");
 
 $setup_sess_access = new SessionAccess("setup");
 
@@ -18,34 +18,26 @@ function returnOutput($output)
 	return $output;
 }
 
-try
+$settings = $setup_sess_access->getArray();
+if (!$settings)
 {
-	$settings = $setup_sess_access->getArray();
-	if (!$settings)
+	$settings = array();
+}
+
+$settings_json = array();
+foreach ($settings as $name=>$value)
+{
+	$value_json = "\"$value\"";
+	if (is_array($value))
 	{
-		$settings = array();
-	}
-	
-	$settings_json = array();
-	foreach ($settings as $name=>$value)
-	{
-		$value_json = "\"$value\"";
-		if (is_array($value))
+		$value_json = array();
+		foreach ($value as $value_index=>$value_value)
 		{
-			$value_json = array();
-			foreach ($value as $value_index=>$value_value)
-			{
-				$value_json[] = "\"$value_index\":\"$value_value\"";
-			}
-			$value_json = "{" . join(",",$value_json) . "}";
+			$value_json[] = "\"$value_index\":\"$value_value\"";
 		}
-		$settings_json[] = "\"$name\":$value_json";
+		$value_json = "{" . join(",",$value_json) . "}";
 	}
-	
-	echo returnOutput("{" . join(",",$settings_json) . "}");
+	$settings_json[] = "\"$name\":$value_json";
 }
-catch (Exception $e)
-{
-	echo returnOutput("{error:'" . $e->Message() . " (" . $e->getCode() . ")'}");
-	exit;
-}
+
+echo returnOutput("{" . join(",",$settings_json) . "}");

@@ -3,7 +3,7 @@
 require_once("config.inc.php");
 GLOBAL $_OAUTH_INTUIT_CONFIG;
 
-require_once("session.php");
+require_once("session.inc.php");
 
 require_once("IntuitAnywhere/IntuitAnywhere.class.php");
 
@@ -12,33 +12,26 @@ $qb_sess_access = new SessionAccess("qb");
 $oauth_sess_access = new SessionAccess("oauth");
 $merchantos_sess_access = new SessionAccess("merchantos");
 
-try
+$ianywhere = new IntuitAnywhere($qb_sess_access);
+
+$is_authorized = false;
+$is_setup = false;
+
+if ($ianywhere->isUserAuthorized())
 {
-	$ianywhere = new IntuitAnywhere($qb_sess_access);
+	$user = $qb_sess_access->CurrentUser;
+	$is_authorized = true;
 	
-	$is_authorized = false;
-	$is_setup = false;
-	
-	if ($ianywhere->isUserAuthorized())
+	if (isset($setup_sess_access->data_delay))
 	{
-		$user = $qb_sess_access->CurrentUser;
-		$is_authorized = true;
+		$is_setup = true;
 		
-		if (isset($setup_sess_access->data_delay))
+		if ($_GET['return_url'] && $_GET['return_on_setup'])
 		{
-			$is_setup = true;
-			
-			if ($_GET['return_url'] && $_GET['return_on_setup'])
-			{
-				header ("location: " . $_GET['return_url']);
-				exit;
-			}
+			header ("location: " . $_GET['return_url']);
+			exit;
 		}
 	}
-}
-catch(Exception $e) {
-	echo "Exception: " . $e->getMessage();
-	var_dump($e);
 }
 
 ?>

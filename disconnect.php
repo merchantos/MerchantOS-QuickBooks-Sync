@@ -1,7 +1,7 @@
 <?php
 
 include_once("config.inc.php");
-require_once("session.php");
+require_once("session.inc.php");
 
 $oauth_sess_access = new SessionAccess("oauth");
 $oauth_sess_access->clear();

@@ -1,5 +1,7 @@
 <?php
 
+// initialize the session and handle any session related get params
+
 if (!$_REQUEST[session_name()])
 {
 	if ($_GET['key'])

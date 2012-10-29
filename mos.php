@@ -1,9 +1,12 @@
 <?php
 
+echo "test depricated";
+exit;
+
 require_once("config.inc.php");
 GLOBAL $_OAUTH_INTUIT_CONFIG;
 
-require_once("session.php");
+require_once("session.inc.php");
 
 require_once("MerchantOS/Accounting.class.php");
 

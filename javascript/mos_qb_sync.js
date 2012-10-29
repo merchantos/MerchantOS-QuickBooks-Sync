@@ -28,8 +28,12 @@ mosqb = {
 				$('#dashboard').show();
 			});
 		},
-		syncNow: function () {
-			$.getJSON("./jsonapi/SyncNow.json.php").success(function (data) {
+		syncNow: function (date) {
+			var query = "";
+			if (date) {
+				query = "?date=" + date;
+			}
+			return $.getJSON("./jsonapi/SyncNow.json.php" + query).success(function (data) {
 				mosqb.dashboard.loadLog();
 			});
 		},
@@ -40,7 +44,15 @@ mosqb = {
 					$("#dashboard dl").append("<dt>No Events</dt><dd>Hit 'Sync Now' if you'd like to get started pushing your data</dt>");
 				} else {
 					$.each(data,function(i,value) {
-						$("#dashboard dl").append("<dt>" + value['date'] + "</dt><dd>" + value['msg'] + "</dd>");
+						if (value['imported']) {
+							$("#dashboard dl").append("<dt>" + value['date'] + "</dt><dd>" + value['msg'] + "</dd>");
+						} else {
+							$("#dashboard dl").append("<dt>" + value['date'] + "</dt><dd>" + value['msg'] + " (<a href='#re-sync-day' rday='"+ value['date'] +"'>Re-Sync Day</a>)</dd>");
+						}
+					});
+					$("a[href='#re-sync-day']").click(function () {
+						var date = $(this).attr('rday');
+						mosqb.dashboard.syncNow(date);
 					});
 				}
 			});
@@ -210,8 +222,17 @@ $(document).ready(function() {
 		mosqb.sections.activate('settings');
 	});
 	
+	var syncing = false;
+	
 	$("a[href='#syncnow']").click(function () {
-		mosqb.dashboard.syncNow();
+		if (syncing) return;
+		syncing = true;
+		var button = $(this);
+		button.html("Syncing...");
+		$.when(mosqb.dashboard.syncNow()).done(function (data) {
+			button.html("Sync Now");
+			syncing = false;
+		});
 	});
 });
 
