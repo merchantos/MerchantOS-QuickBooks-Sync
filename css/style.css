@@ -20,7 +20,7 @@ body > header h3 {
 }
 body > header h1 {
     color: #fff;
-    font-size: .8em;
+    font-size: 1em;
     font-weight: normal;
     float: left;
     padding: 20px 15px 15px;
@@ -81,7 +81,6 @@ section {
 }
 section.selected { display: block; }
 section header {
-    border-bottom: 3px solid #ccc;
     overflow: hidden;
     margin: 0 0 1em;
 }

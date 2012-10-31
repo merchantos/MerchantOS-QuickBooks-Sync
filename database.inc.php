@@ -8,9 +8,13 @@ class mosqb_database {
 	
 	public static function readAccount($api_key)
 	{
-		$table = "account INDEXED BY api_key";
-		$sql = "SELECT account_id FROM $table WHERE api_key = \"$api_key\"";
+		$api_key = SQLite3::escapeString($api_key);
+		$sql = "SELECT account_id FROM account WHERE api_key = '$api_key'";
 		$pdoresult = self::$pdo->query($sql);
+		if (!$pdoresult)
+		{
+			return null;
+		}
 		$rows = $pdoresult->fetchAll();
 		if (count($rows)!==1)
 		{
@@ -21,18 +25,22 @@ class mosqb_database {
 	
 	public static function writeAccount($api_key)
 	{
-		$sql = "INSERT OR IGNORE INTO account (api_key) VALUES (\"$api_key\")";
+		$api_key = SQLite3::escapeString($api_key);
+		$sql = "INSERT OR IGNORE INTO account (api_key) VALUES ('$api_key')";
 		self::$pdo->query($sql);
 		
-		return $this->readAccount($api_key);
+		return self::readAccount($api_key);
 	}
 	
 	public static function readOAuth($account_id)
 	{
 		$account_id = (integer)$account_id;
-		$table = "oauth INDEXED BY account_id";
-		$sql = "SELECT phpserialized FROM $table WHERE account_id = $account_id";
+		$sql = "SELECT phpserialized FROM oauth WHERE account_id = $account_id";
 		$pdoresult = self::$pdo->query($sql);
+		if (!$pdoresult)
+		{
+			return array();
+		}
 		$rows = $pdoresult->fetchAll();
 		if (count($rows)!==1)
 		{
@@ -45,24 +53,40 @@ class mosqb_database {
 	{
 		$account_id = (integer)$account_id;
 		$oauth_serialized = serialize($oauth_data_array);
-		$sql = "INSERT OR REPLACE INTO account (account_id,phpserialized) VALUES ($account_id,\"$oauth_serialized\")";
-		self::$pdo->query($sql);
+		$stmt = self::$pdo->prepare("INSERT OR REPLACE INTO oauth (account_id,phpserialized) VALUES (:account_id, :oauth)");
+		$stmt->execute(array(":account_id"=>$account_id,":oauth"=>$oauth_serialized));
+	}
+	
+	public static function deleteOAuth($account_id)
+	{
+		$account_id = (integer)$account_id;
+		$stmt = self::$pdo->prepare("DELETE FROM oauth WHERE account_id=:account_id");
+		$stmt->execute(array(":account_id"=>$account_id));
 	}
 	
 	public static function readSyncSetup($account_id)
 	{
-		$table = "sync_setup INDEXED BY account_id_name";
-		$sql = "SELECT name,value FROM $table WHERE account_id = $account_id";
+		$sql = "SELECT name,value FROM sync_setup WHERE account_id = $account_id";
 		$pdoresult = self::$pdo->query($sql);
-		if ($pdoresult->rowCount()===0)
+		if (!$pdoresult)
+		{
+			return array();
+		}
+		$rows = $pdoresult->fetchAll();
+		if (count($rows)===0)
 		{
 			return array();
 		}
 		$setup_values = array();
-		foreach ($pdoresult as $row)
+		foreach ($rows as $row)
 		{
 			$name = $row['name'];
 			$value = $row['value'];
+			if (stripos($name,"s:")===0)
+			{
+				$name = substr($name,2);
+				$value = unserialize($value);
+			}
 			$setup_values[$name] = $value;
 		}
 		return $setup_values;
@@ -71,13 +95,25 @@ class mosqb_database {
 	public static function writeSyncSetup($account_id,$setup_values)
 	{
 		$account_id = (integer)$account_id;
-		$values = array();
+		self::$pdo->exec("BEGIN TRANSACTION");
+		$stmt = self::$pdo->prepare("INSERT OR REPLACE INTO sync_setup (account_id,name,value) VALUES (:account_id, :name, :value)");
 		foreach ($setup_values as $name=>$value)
 		{
-			$values[] = "($account_id,\"$name\",\"$value\")";
+			if (is_array($value) || is_object($value))
+			{
+				$name = "s:$name";
+				$value = serialize($value);
+			}
+			$stmt->execute(array(":account_id"=>$account_id,":name"=>$name,":value"=>$value));
 		}
-		$sql = "INSERT OR REPLACE INTO sync_setup (account_id,name,value) VALUES " . join(",",$values);
-		self::$pdo->query($sql);
+		self::$pdo->exec("END TRANSACTION");
+	}
+	
+	public static function deleteSyncSetup($account_id)
+	{
+		$account_id = (integer)$account_id;
+		$stmt = self::$pdo->prepare("DELETE FROM sync_setup WHERE account_id=:account_id");
+		$stmt->execute(array(":account_id"=>$account_id));
 	}
 	
 	public static function readAccountLog($account_id,$start_time,$end_time=null)
@@ -88,19 +124,26 @@ class mosqb_database {
 		}
 		$start_time = (integer)$start_time;
 		$end_time = (integer)$end_time;
-		$table = "account_log INDEXED BY account_insert_time";
-		$sql = "SELECT insert_time,phpserialized FROM $table WHERE account_id = $account_id AND insert_time BETWEEN $start_time AND $end_time";
+		$account_id = (integer)$account_id;
+		$sql = "SELECT insert_time,phpserialized FROM account_log WHERE account_id = $account_id AND insert_time BETWEEN $start_time AND $end_time";
 		$pdoresult = self::$pdo->query($sql);
-		if ($pdoresult->rowCount()===0)
+		if (!$pdoresult)
+		{
+			return array();
+		}
+		$rows = $pdoresult->fetchAll();
+		if (count($rows)===0)
 		{
 			return array();
 		}
 		$log_entries = array();
-		foreach ($pdoresult as $row)
+		foreach ($rows as $row)
 		{
 			$insert_time = $row['insert_time'];
 			$phpserialized = $row['phpserialized'];
-			$log_entries[$insert_time] = unserialize($phpserialized);
+			$log_entry = unserialize($phpserialized);
+			$log_entry['insert_time'] = $insert_time;
+			$log_entries[] = $log_entry;
 		}
 		return $log_entries;
 	}
@@ -110,13 +153,14 @@ class mosqb_database {
 		$account_id = (integer)$account_id;
 		$values = array();
 		$time = time();
+		self::$pdo->exec("BEGIN TRANSACTION");
+		$stmt = self::$pdo->prepare("INSERT OR REPLACE INTO account_log (account_id,insert_time,phpserialized) VALUES (:account_id, :insert_time, :phpserialized)");
 		foreach ($log_entries as $entry)
 		{
 			$entry_serialized = serialize($entry);
-			$values[] = "($account_id,$time,\"$entry_serialized\")";
+			$stmt->execute(array(":account_id"=>$account_id,":insert_time"=>$time,":phpserialized"=>$entry_serialized));
 		}
-		$sql = "INSERT OR REPLACE INTO sync_setup (account_id,insert_time,phpserialized) VALUES " . join(",",$values);
-		self::$pdo->query($sql);
+		self::$pdo->exec("END TRANSACTION");
 	}
 	
 	public static function init()

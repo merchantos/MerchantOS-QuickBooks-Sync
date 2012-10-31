@@ -4,14 +4,16 @@ require_once("../config.inc.php");
 GLOBAL $_OAUTH_INTUIT_CONFIG;
 
 require_once("session.inc.php");
+require_once("database.inc.php");
 
+$login_sess_access = new SessionAccess("login");
 $setup_sess_access = new SessionAccess("setup");
 
 header("Content-Type: application/json");
 
 function returnOutput($output)
 {
-	if ($_GET['callback'])
+	if (isset($_GET['callback']))
 	{
 		return $_GET['callback'] . "(" . $output . ");";
 	}
@@ -34,4 +36,6 @@ foreach ($_POST as $setting_name=>$setting_value)
 	}
 	$setup_sess_access->{$setting_name} = $setting_value;
 }
+mosqb_database::writeSyncSetup($login_sess_access->account_id,$setup_sess_access->getArray());
+
 echo returnOutput("{\"success\":true}");

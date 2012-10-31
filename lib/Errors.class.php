@@ -152,11 +152,9 @@ class helpers_Errors
 	{
 		if (defined('DISPLAY_ALL_ERRORS') && DISPLAY_ALL_ERRORS)
 		{
-			if (isset($_GET['ajax']) && $_GET['ajax']==1)
+			if ($this->_isJSON())
 			{
-				require_once("json.php");
-				$json = new JSON();
-				return $json->encode(array("error"=>"<pre>Error [$type]: $msg in <b>$file</b> on line <b>$line</b></pre>"));
+				return '{"error":"Error ['.$type.']: '.htmlentities($msg,ENT_QUOTES).' in '.$file.' on line '.$line.'"}';
 			}
 			else
 			{
@@ -167,17 +165,26 @@ class helpers_Errors
 		
 		$message = "An error has occured and MerchantOS has been notified. Please try again and if this problem continues please call support at (866) 554-2453.";
 		
-		if (isset($_GET['ajax']) && $_GET['ajax']!=1)
+		if ($this->_isJSON())
+		{
+			if (!defined("MERCHANTOS_ERROR"))
+			{
+				return '{"error":"'.htmlentities($message,ENT_QUOTES).'"}';
+			}
+		}
+		else
 		{
 			return "<div>$message</div>";
 		}
-		
-		if (!defined("MERCHANTOS_ERROR"))
+	}
+	
+	protected function _isJSON()
+	{
+		$headers = headers_list();
+		if (array_search("Content-Type: application/json",$headers)!==false)
 		{
-			require_once("json.php");
-			$json = new JSON();
-			define("MERCHANTOS_ERROR",true);
-			return $json->encode(array("error"=>$message));
+			return true;
 		}
+		return false;
 	}
 }

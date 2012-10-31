@@ -1,4 +1,9 @@
 mosqb = {
+	error:function (msg) {
+		/**
+		 * @todo Display error msg
+		 */
+	},
 	sections:{
 		activate: function(section_name) {
 			$("section").removeClass("selected").hide();
@@ -33,8 +38,12 @@ mosqb = {
 			if (date) {
 				query = "?date=" + date;
 			}
-			return $.getJSON("./jsonapi/SyncNow.json.php" + query).success(function (data) {
-				mosqb.dashboard.loadLog();
+			return $.getJSON("./jsonapi/SyncNow.json.php" + query).done(function (result) {
+				if (result.success) {
+					mosqb.dashboard.loadLog();
+				} else if (result.error) {
+					mosqb.error(result.error);
+				}
 			});
 		},
 		loadLog: function() {

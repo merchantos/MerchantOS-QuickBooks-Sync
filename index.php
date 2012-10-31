@@ -11,6 +11,13 @@ $setup_sess_access = new SessionAccess("setup");
 $qb_sess_access = new SessionAccess("qb");
 $oauth_sess_access = new SessionAccess("oauth");
 $merchantos_sess_access = new SessionAccess("merchantos");
+$login_sess_access = new SessionAccess("login");
+
+if (!$login_sess_access->account_id)
+{
+	echo "Login/account creation failed.";
+	exit;
+}
 
 $ianywhere = new IntuitAnywhere($qb_sess_access);
 
@@ -26,7 +33,7 @@ if ($ianywhere->isUserAuthorized())
 	{
 		$is_setup = true;
 		
-		if ($_GET['return_url'] && $_GET['return_on_setup'])
+		if (isset($_GET['return_url']) && isset($_GET['return_on_setup']))
 		{
 			header ("location: " . $_GET['return_url']);
 			exit;
@@ -46,10 +53,10 @@ if ($ianywhere->isUserAuthorized())
 	
 	    <header>
 	        <h3><a href="http://merchantos.com">MerchantOS</a></h3>
-            <h1>Quickbooks Sync</h1>
+            <h1>QuickBooks Sync</h1>
     		<ul class="user">
     		    <?php if ($is_authorized) { ?><li class="block"><?php echo $user['handle']; ?></li><?php } ?>
-    		    <li class="logout"><a href="<?php echo $merchantos_sess_access->return_url; if ($_GET['disconnected'] || !$ianywhere->isUserAuthorized()) echo "&disconnected=1"; ?>">Return to MerchantOS &rarr; </a></li>
+    		    <li class="logout"><a href="<?php echo $merchantos_sess_access->return_url; if (isset($_GET['disconnected']) || !$ianywhere->isUserAuthorized()) echo "&disconnected=1"; ?>">Return to MerchantOS &rarr; </a></li>
     		</ul>
 	    </header>
 
@@ -65,7 +72,7 @@ if ($ianywhere->isUserAuthorized())
 		
 		<section id="dashboard" class="<?php if ($is_authorized && $is_setup) echo "selected"; ?>" >
 			<header>
-    			<h1>Dashboard</h1>
+    			<h1>History</h1>
 			    <nav>
 			        <ul>
 			            <li><a href="#settings">Sync Settings</a></li>
@@ -73,12 +80,11 @@ if ($ianywhere->isUserAuthorized())
 			    </nav>
 			</header>
 			
-			<h2>History</h2>
 			<dl>
 			    <dt>Loading...</dt>
 			</dl>
 			<a href="#syncnow" class="button">Sync Now</a>
-			<a href="<?php echo $merchantos_sess_access->return_url; if ($_GET['disconnected'] || !$ianywhere->isUserAuthorized()) echo "&disconnected=1"; ?>">Return to MerchantOS &rarr; </a>
+			<a href="<?php echo $merchantos_sess_access->return_url; if (isset($_GET['disconnected']) || !$ianywhere->isUserAuthorized()) echo "&disconnected=1"; ?>">Return to MerchantOS &rarr; </a>
 		</section>
 		
 		<section id="settings" class="<?php if ($is_authorized && !$is_setup) echo "selected"; ?>" style="display: none;">

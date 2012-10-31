@@ -6,9 +6,17 @@ class SessionAccess
 	function __construct($type)
 	{
 		$this->type = $type;
+		if (!isset($_SESSION[$this->type]))
+		{
+			$_SESSION[$this->type] = array();
+		}
 	}
 	function __get($name)
 	{
+		if (!isset($_SESSION[$this->type][$name]))
+		{
+			return null;
+		}
 		return $_SESSION[$this->type][$name];
 	}
 	function __set($name,$value)
@@ -34,6 +42,10 @@ class SessionAccess
 	{
 		return $_SESSION[$this->type];
 	}
+	function loadArray($arr)
+	{
+		$_SESSION[$this->type] = $arr;
+	}
 	
 	function storeCache($name,$value)
 	{
@@ -46,7 +58,7 @@ class SessionAccess
 			return null;
 		}
 		$cache = $_SESSION[$this->type][$name."_cache"];
-		if (time() - $shops_cache['time'] < $timeout)
+		if (isset($cache['time']) && time() - $cache['time'] < $timeout)
 		{
 			return $cache['value'];
 		}

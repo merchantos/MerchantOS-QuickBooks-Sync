@@ -14,7 +14,7 @@ header("Content-Type: application/json");
 
 function returnOutput($output)
 {
-	if ($_GET['callback'])
+	if (isset($_GET['callback']))
 	{
 		return $_GET['callback'] . "(" . $output . ");";
 	}
@@ -34,7 +34,7 @@ if (!$accounts_json)
 	$ia_account = new IntuitAnywhere_Account($ianywhere);
 	
 	$filters = array();
-	if ($_GET['AccountParentId'])
+	if (isset($_GET['AccountParentId']))
 	{
 		$filters['AccountParentId'] =  $_GET['AccountParentId'];
 	}

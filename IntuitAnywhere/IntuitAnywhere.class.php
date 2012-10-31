@@ -349,7 +349,7 @@ class IntuitAnywhere
 	public function getCurrentUser()
 	{
 		$request = new OAuthRequester("https://appcenter.intuit.com/api/v1/user/current","GET");
-		$result = $request->doRequest(0,$curl_opt);
+		$result = $request->doRequest(0);
 		
 		if ($result['code'] != 200)
 		{
@@ -393,7 +393,7 @@ class IntuitAnywhere
 	public function getMenu()
 	{
 		$request = new OAuthRequester("https://appcenter.intuit.com/api/v1/Account/AppMenu","GET");
-		$result = $request->doRequest(0,$curl_opt);
+		$result = $request->doRequest(0);
 		
 		if ($result['code'] != 200)
 		{
@@ -402,5 +402,42 @@ class IntuitAnywhere
 		}
 		
 		return $result['body'];
+	}
+	
+	public function disconnect()
+	{
+		$request = new OAuthRequester("https://appcenter.intuit.com/api/v1/Connection/Disconnect","GET");
+		$result = $request->doRequest(0);
+		
+		if ($result['code'] != 200)
+		{
+			$this->_handleError($result,"Could not disconnect user.");
+			return false;
+		}
+		
+		return true;
+	}
+	
+	public function reconnect()
+	{
+		$request = new OAuthRequester("https://appcenter.intuit.com/api/v1/Connection/Reconnect","GET");
+		$result = $request->doRequest(0);
+		
+		if ($result['code'] != 200)
+		{
+			$this->_handleError($result,"Could not disconnect user.");
+			return false;
+		}
+		
+		$xml = new SimpleXMLElement($result['body']);
+		
+		$OAuthToken = (string)$xml->OAuthToken;
+		$OAuthTokenSecret = (string)$xml->OAuthTokenSecret;
+		
+		// hack to install the new tokens for oauth
+		$oauth_store = OAuthStore::instance();
+		$oauth_store->addServerToken(null, 'access', $OAuthToken, $OAuthTokenSecret, null, null);
+		
+		return true;
 	}
 }

@@ -13,20 +13,20 @@ header("Content-Type: application/json");
 
 function returnOutput($output)
 {
-	if ($_GET['callback'])
+	if (isset($_GET['callback']))
 	{
 		return $_GET['callback'] . "(" . $output . ");";
 	}
 	return $output;
 }
 
-$shops = false;//$merchantos_sess_access->getCache("shops",600);
+$shops = $merchantos_sess_access->getCache("shops",600);
 if (!$shops)
 {
 	require_once("MerchantOS/Shop.class.php");
 	$mos_shop = new MerchantOS_Shop($merchantos_sess_access->api_key,$merchantos_sess_access->api_account);
 	$shops = $mos_shop->listAll();
-	$merchantos_sess_access->storeCache($shops);
+	$merchantos_sess_access->storeCache("shops",$shops);
 }
 $shops_json = array();
 foreach ($shops as $shop)

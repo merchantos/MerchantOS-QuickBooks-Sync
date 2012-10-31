@@ -4,12 +4,13 @@ require_once("../config.inc.php");
 GLOBAL $_OAUTH_INTUIT_CONFIG;
 
 require_once("session.inc.php");
+require_once("database.inc.php");
 
 $setup_sess_access = new SessionAccess("setup");
 $qb_sess_access = new SessionAccess("qb");
 $oauth_sess_access = new SessionAccess("oauth");
 $merchantos_sess_access = new SessionAccess("merchantos");
-$log_sess_access = new SessionAccess("log");
+$login_sess_access = new SessionAccess("login");
 
 require_once("IntuitAnywhere/IntuitAnywhere.class.php");
 
@@ -18,7 +19,7 @@ require_once("MerchantOS/Accounting.class.php");
 
 function returnOutput($output)
 {
-	if ($_GET['callback'])
+	if (isset($_GET['callback']))
 	{
 		return $_GET['callback'] . "(" . $output . ");";
 	}
@@ -75,8 +76,13 @@ $start_date = new DateTime($setup_sess_access->start_date);
 // data delay is an offset from todays date that DateTime knows how to translate
 $end_date = new DateTime($setup_sess_access->data_delay);
 
-if ($_GET['date']) {
+if (isset($_GET['date'])) {
 	$one_date = new DateTime($_GET['date']);
+	if ($one_date > $end_date)
+	{
+		// we can't process a date this recent, it's against our data delay setting
+		return "{\"error\":\"Sync date is beyond your data delay setting.\"}";
+	}
 	$start_date = $one_date;
 	$end_date = $one_date;
 }
@@ -123,19 +129,9 @@ if (!$send_orders)
 
 $log = $mosqb_sync->sync($start_date,$end_date);
 
-$log_json = array();
-if (isset($log_sess_access->log))
+if (count($log)>0)
 {
-	$all_logs = $log_sess_access->log;
+	mosqb_database::writeAccountLogEntries($login_sess_access->account_id,$log);
 }
-else
-{
-	$all_logs = array();
-}
-foreach ($log as $logentry)
-{
-	$all_logs[] = $logentry;
-}
-$log_sess_access->log = $all_logs;
 
 echo returnOutput("{\"success\":true}");

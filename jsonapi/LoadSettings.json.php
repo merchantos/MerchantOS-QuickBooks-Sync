@@ -5,13 +5,14 @@ GLOBAL $_OAUTH_INTUIT_CONFIG;
 
 require_once("session.inc.php");
 
+$login_sess_access = new SessionAccess("login");
 $setup_sess_access = new SessionAccess("setup");
 
 header("Content-Type: application/json");
 
 function returnOutput($output)
 {
-	if ($_GET['callback'])
+	if (isset($_GET['callback']))
 	{
 		return $_GET['callback'] . "(" . $output . ");";
 	}
@@ -19,6 +20,12 @@ function returnOutput($output)
 }
 
 $settings = $setup_sess_access->getArray();
+if (!$settings)
+{
+	require_once("database.inc.php");
+	$settings = mosqb_database::readSyncSetup($login_sess_access->account_id);
+	$setup_sess_access->loadArray($settings);
+}
 if (!$settings)
 {
 	$settings = array();
