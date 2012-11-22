@@ -24,10 +24,16 @@ if (isset($_GET['page']))
 {
 	$page = (integer)$_GET['page'];
 }
-$start_time = time() - (60*60*24*30*$page); // one month (60*60*24*30) per page
-$end_time = time();
+$limit = 16;
+$offset = ($page-1)*$limit;
 
-$log_msgs = mosqb_database::readAccountLog($login_sess_access->account_id,$start_time,$end_time);
+$alerts=false;
+if (isset($_GET['alerts']) && $_GET['alerts']==1)
+{
+	$alerts = true;
+}
+
+$log_msgs = mosqb_database::readAccountLog($login_sess_access->account_id,$offset,$limit,$alerts);
 if (!$log_msgs)
 {
 	$log_msgs = array();
@@ -36,14 +42,21 @@ if (!$log_msgs)
 $log_json = array();
 foreach ($log_msgs as $insert_time=>$log_msg)
 {
-	$date_json = "\"".$log_msg['date']."\"";
+	$account_log_id_json = "\"".$log_msg['account_log_id']."\"";
+	$date_json = "\"".$log_msg['data_date']."\"";
 	$msg_json = "\"".$log_msg['msg']."\"";
-	$imported = "false";
-	if ($log_msg['imported']) {
-		$imported = "true";
+	$success = "false";
+	if ($log_msg['success']) {
+		$success = "true";
 	}
 	$insert_time = $log_msg['insert_time'];
-	$log_json[] = "{\"date\":$date_json,\"msg\":$msg_json,\"imported\":$imported,\"insert_time\":$insert_time}";
+	$log_json[] = "{\"date\":$date_json,\"msg\":$msg_json,\"success\":$success,\"insert_time\":$insert_time,\"account_log_id\":$account_log_id_json}";
 }
 
-echo returnOutput("[" . join(",",$log_json) . "]");
+$count = count($log_json);
+if ($count==16)
+{
+	array_pop($log_json);
+}
+
+echo returnOutput("{\"page\":$page,\"count\":$count,\"log\":[" . join(",",$log_json) . "]}");
