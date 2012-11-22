@@ -103,7 +103,7 @@ class Sync_MerchantOStoQuickBooks {
 		
 		if (count($this->_days_buffer)==0)
 		{
-			return array(array("date"=>date_format(new DateTime(),"m/d/Y")),"msg"=>"No records to sync.");
+			return array(array("date"=>date_format(new DateTime(),"m/d/Y")),"msg"=>"No records to sync.","success"=>true,"alert"=>false);
 		}
 		
 		require_once("IntuitAnywhere/JournalEntry.class.php");
@@ -125,7 +125,7 @@ class Sync_MerchantOStoQuickBooks {
 				$balance -= $payments_total;
 				if (round($balance)!=0)
 				{
-					$logs[] = array("date"=>$date,"msg"=>"Records contained unbalanced sales.","imported"=>false);
+					$logs[] = array("date"=>$date,"msg"=>"Records contained unbalanced sales.","success"=>false,"alert"=>true);
 					continue;
 				}
 				
@@ -133,11 +133,11 @@ class Sync_MerchantOStoQuickBooks {
 				{
 					if ($this->_sendSales($date,$sales_data))
 					{
-						$logs[] = array("date"=>$date,"msg"=>"Sent \$$sales_total Sales, \$$discounts_total Discounts, \$$tax_total Tax, \$$payments_total Payments.","imported"=>true);
+						$logs[] = array("date"=>$date,"msg"=>"Sent \$$sales_total Sales, \$$discounts_total Discounts, \$$tax_total Tax, \$$payments_total Payments.","success"=>true,"alert"=>false);
 					}
 					else
 					{
-						$logs[] = array("date"=>$date,"msg"=>"$0 in Sales.","imported"=>true);
+						$logs[] = array("date"=>$date,"msg"=>"$0 in Sales.","success"=>true,"alert"=>false);
 					}
 				}
 				
@@ -146,11 +146,11 @@ class Sync_MerchantOStoQuickBooks {
 					$cogs_total = round($this->_getCOGSTotal($sales_data),2);
 					if ($this->_sendCOGS($date,$sales_data))
 					{
-						$logs[] = array("date"=>$date,"msg"=>"Sent \$$cogs_total in Cost of Goods Sold.","imported"=>true);
+						$logs[] = array("date"=>$date,"msg"=>"Sent \$$cogs_total in Cost of Goods Sold.","success"=>true,"alert"=>false);
 					}
 					else
 					{
-						$logs[] = array("date"=>$date,"msg"=>"$0 in COGS.","imported"=>true);
+						$logs[] = array("date"=>$date,"msg"=>"$0 in COGS.","success"=>true,"alert"=>false);
 					}
 				}
 			}
@@ -197,7 +197,7 @@ class Sync_MerchantOStoQuickBooks {
 	
 	protected function _fillDaysWithSalesAndCOGS($start_date,$end_date)
 	{
-		$sales_by_tax_class = $this->_mos_accounting->getTaxClassSalesByDay($start_date->format('c'),$end_date->format('c'));
+		$sales_by_tax_class = $this->_mos_accounting->getTaxClassSalesByDay($this->_startOfDay($start_date),$this->_endOfDay($end_date));
 		
 		foreach ($sales_by_tax_class as $sales_day_class)
 		{
@@ -212,7 +212,7 @@ class Sync_MerchantOStoQuickBooks {
 	
 	protected function _fillDaysWithDiscounts($start_date,$end_date)
 	{
-		$discounts = $this->_mos_accounting->getDiscountsByDay($start_date->format('c'),$end_date->format('c'));
+		$discounts = $this->_mos_accounting->getDiscountsByDay($this->_startOfDay($start_date),$this->_endOfDay($end_date));
 		
 		foreach ($discounts as $discount_day)
 		{
@@ -224,7 +224,7 @@ class Sync_MerchantOStoQuickBooks {
 	
 	protected function _fillDaysWithTax($start_date,$end_date)
 	{
-		$taxes_by_day = $this->_mos_accounting->getTaxesByDay($start_date->format('c'),$end_date->format('c'));
+		$taxes_by_day = $this->_mos_accounting->getTaxesByDay($this->_startOfDay($start_date),$this->_endOfDay($end_date));
 		
 		foreach ($taxes_by_day as $tax_day)
 		{
@@ -237,7 +237,7 @@ class Sync_MerchantOStoQuickBooks {
 	
 	protected function _fillDaysWithPayments($start_date,$end_date)
 	{
-		$payments = $this->_mos_accounting->getPaymentsByDay($start_date->format('c'),$end_date->format('c'));
+		$payments = $this->_mos_accounting->getPaymentsByDay($this->_startOfDay($start_date),$this->_endOfDay($end_date));
 		
 		foreach ($payments as $payment_day_type)
 		{
@@ -393,16 +393,22 @@ class Sync_MerchantOStoQuickBooks {
 		$balance = 0;
 		if ($this->_average_costing)
 		{
-			foreach ($sales_data['avg_cogs'] as $tax_class=>$avg_cogs_subtotal)
+			if (isset($sales_data['avg_cogs']))
 			{
-				$balance += (float)$avg_cogs_subtotal;
+				foreach ($sales_data['avg_cogs'] as $tax_class=>$avg_cogs_subtotal)
+				{
+					$balance += (float)$avg_cogs_subtotal;
+				}
 			}
 		}
 		else
 		{
-			foreach ($sales_data['fifo_cogs'] as $tax_class=>$fifo_cogs_subtotal)
+			if (isset($sales_data['fifo_cogs']))
 			{
-				$balance += (float)$fifo_cogs_subtotal;
+				foreach ($sales_data['fifo_cogs'] as $tax_class=>$fifo_cogs_subtotal)
+				{
+					$balance += (float)$fifo_cogs_subtotal;
+				}
 			}
 		}
 		return $balance;
@@ -451,5 +457,14 @@ class Sync_MerchantOStoQuickBooks {
 		}
 		$line->Amount = number_format($amount,2,".","");
 		return true;
+	}
+	
+	protected function _startOfDay($start_date)
+	{
+		return $start_date->format("Y-m-d\T00:00:00P");
+	}
+	protected function _endOfDay($end_date)
+	{
+		return $end_date->format("Y-m-d\T23:59:59P");
 	}
 }
