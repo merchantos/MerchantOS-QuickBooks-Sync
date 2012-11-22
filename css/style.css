@@ -281,7 +281,7 @@ div.scary {
 dl {
 	width: 100%;
 	overflow: hidden;
-	border-bottom: 1px solid #ccc;
+	border-top: 1px solid #ccc;
 }
 dl dd, dl dt {
     
@@ -291,7 +291,7 @@ dl dd, dl dt {
 	margin: 0 0 .5em;
 	font-size: .8em;
 	
-	border-top: 1px solid #ccc;
+	border-bottom: 1px solid #ccc;
 }
 dl dt {
     padding: 10px 0 0;
