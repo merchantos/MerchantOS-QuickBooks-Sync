@@ -60,9 +60,12 @@ if ($ianywhere->isUserAuthorized())
     		</ul>
 	    </header>
 
-
+		
 		<div id="loading"><img src="images/loading.gif" height="16" width="16" border="0"> loading your data...</div>
-
+		<div id="errors" style="display: none;">
+			<ul></ul>
+			<button>Close</button>
+		</div>
 
 		<section id="welcome" class="<?php if (!$is_authorized) echo "selected"; ?>" style="display: none;">
 			<h1>Welcome</h1>
@@ -72,15 +75,21 @@ if ($ianywhere->isUserAuthorized())
 		
 		<section id="dashboard" class="<?php if ($is_authorized && $is_setup) echo "selected"; ?>" >
 			<header>
-    			<h1>History</h1>
+    			<h1>Dashboard</h1>
 			    <nav>
 			        <ul>
 			            <li><a href="#settings">Sync Settings</a></li>
 			        </ul>
 			    </nav>
 			</header>
-			
-			<dl>
+			<div style="display: none;">
+				<h2>Alerts</h2>
+				<dl class='alerts'>
+					<dt>Loading...</dt>
+				</dl>
+			</div>
+			<h2>History</h2>
+			<dl class='history'>
 			    <dt>Loading...</dt>
 			</dl>
 			<a href="#syncnow" class="button">Sync Now</a>
@@ -157,7 +166,7 @@ if ($ianywhere->isUserAuthorized())
         				<div class="setup_category">
     					   <label for="setup_sales">Sales Income</label>
         				   <div class="account_select">
-        				       <select data-placeholder="Choose a category" class="qb_account_list" id="setup_sales" name="sales" >
+        				       <select data-placeholder="Choose a category" class="qb_account_list" id="setup_sales" name="sales" default_account="Sales of Product Income">
         						   <option value='loading'>Loading...</option>
         					   </select>
         					   <!--<label><input type="checkbox" checked="checked"  class="setup_field" id="setup_sales_subaccounts" name="sales_subaccounts" /> Create subaccounts for each Tax Class.</label>-->
@@ -166,7 +175,7 @@ if ($ianywhere->isUserAuthorized())
 						<div class="setup_category">
         					<label for="setup_payments">Discounts</label>
         					<div class="account_select">
-        						<select class="qb_account_list" id="setup_discounts" name="discounts" >
+        						<select class="qb_account_list" id="setup_discounts" name="discounts" default_account="Discounts given">
         							<option value='loading'>Loading...</option>
         						</select>
         					</div>
@@ -174,25 +183,25 @@ if ($ianywhere->isUserAuthorized())
         				<div class="setup_category">
         					<label for="setup_payments">Payments</label>
         					<div class="account_select">
-        						<select class="qb_account_list" id="setup_payments" name="payments" >
+        						<select class="qb_account_list" id="setup_payments" name="payments" default_account="Undeposited Funds">
         							<option value='loading'>Loading...</option>
         						</select>
-            					<!--<label><input type="checkbox" checked="checked" class="setup_field" id="setup_payments_subaccounts" name="payments_subaccounts" /> Create subaccounts for each Payment Type.</label>-->
+            					<label><input type="checkbox" checked="checked" class="setup_field" id="setup_payments_subaccounts" name="payments_subaccounts" /> Create subaccounts for each Payment Type.</label>
         					</div>
         				</div>
         				<div class="setup_category">
         					<label for="qb_account_list">Tax</label>
         					<div class="account_select">
-        						<select class="qb_account_list" id="setup_tax" name="tax" >
+        						<select class="qb_account_list" id="setup_tax" name="tax" default_account="Sales Tax Agency Payable">
         							<option value='loading'>Loading...</option>
         						</select>
-        						<!--<label><input type="checkbox" checked="checked" class="setup_field" id="setup_tax_subaccounts" name="tax_subaccounts" /> Create subaccounts for each Sales Tax.</label>-->
+        						<label><input type="checkbox" checked="checked" class="setup_field" id="setup_tax_subaccounts" name="tax_subaccounts" /> Create subaccounts for each Sales Tax.</label>
             				</div>
         				</div>
         				<div class="setup_category">
         					<label for="qb_account_list">Credit Accounts</label>
         					<div class="account_select">
-        						<select class="qb_account_list" id="setup_credit_accounts" class="setup_field" name="credit_accounts" >
+        						<select class="qb_account_list" id="setup_credit_accounts" class="setup_field" name="credit_accounts" default_account="Customer Credit Accounts">
         							<option value='loading'>Loading...</option>
         						</select>
         					</div>
@@ -200,7 +209,7 @@ if ($ianywhere->isUserAuthorized())
         				<div class="setup_category">
         					<label for="setup_gift_cards">Gift Cards</label>
         					<div class="account_select">
-        						<select class="qb_account_list" id="setup_gift_cards" class="setup_field" name="gift_cards" >
+        						<select class="qb_account_list" id="setup_gift_cards" class="setup_field" name="gift_cards" default_account="Customer Gift Cards">
         							<option value='loading'>Loading...</option>
         						</select>
         					</div>
@@ -211,7 +220,7 @@ if ($ianywhere->isUserAuthorized())
     				    <div class="setup_category">
     					    <label for="setup_cogs">Cost Of Goods Sold</label>
     					    <div class="account_select">
-    						    <select class="qb_account_list" id="setup_cogs" class="setup_field" name="cogs" >
+    						    <select class="qb_account_list" id="setup_cogs" class="setup_field" name="cogs" default_account="Cost of Goods Sold">
     							    <option value='loading'>Loading...</option>
     						    </select>
                                 <!--<label><input type="checkbox" checked="checked" class="setup_field" id="setup_cogs_subaccounts" name="cogs_subaccounts" /> Create subaccounts for each Tax Class.</label>-->
@@ -220,7 +229,7 @@ if ($ianywhere->isUserAuthorized())
     				    <div class="setup_category">
     					    <label for="setup_inventory">Inventory Assets</label>
     					    <div class="account_select">
-    						    <select class="qb_account_list" id="setup_inventory" class="setup_field" name="inventory" >
+    						    <select class="qb_account_list" id="setup_inventory" class="setup_field" name="inventory" default_account="Inventory Asset">
     							    <option value='loading'>Loading...</option>
     						    </select>
     						    <!--<label><input type="checkbox" checked="checked" class="setup_field" id="setup_inventory_subaccounts" name="inventory_subaccounts" /> Create subaccounts for each Tax Class.</label>-->
@@ -232,7 +241,7 @@ if ($ianywhere->isUserAuthorized())
     				    <div class="setup_category">
     					    <label for="setup_orders">Orders Expense</label>
         					<div class="account_select">
-        						<select class="qb_account_list" id="setup_orders" class="setup_field" name="orders" >
+        						<select class="qb_account_list" id="setup_orders" class="setup_field" name="orders" default_account="Purchases">
         							<option value='loading'>Loading...</option>
         						</select>
         					</div>
@@ -240,7 +249,7 @@ if ($ianywhere->isUserAuthorized())
         				<div class="setup_category">
         					<label for="setup_orders_shipping">Shipping Expense</label>
         					<div class="account_select">
-        						<select class="qb_account_list" id="setup_orders_shipping" class="setup_field" name="orders_shipping" >
+        						<select class="qb_account_list" id="setup_orders_shipping" class="setup_field" name="orders_shipping" default_account="Shipping, Delivery Expense">
         							<option value='loading'>Loading...</option>
         						</select>
         					</div>
@@ -248,7 +257,7 @@ if ($ianywhere->isUserAuthorized())
         				<div class="setup_category">
         					<label for="setup_orders_other">Other Expense</label>
         					<div class="account_select">
-        						<select class="qb_account_list" id="setup_orders_other" class="setup_field" name="orders_other" >
+        						<select class="qb_account_list" id="setup_orders_other" class="setup_field" name="orders_other" default_account="Purchases">
         							<option value='loading'>Loading...</option>
         						</select>
         					</div>
