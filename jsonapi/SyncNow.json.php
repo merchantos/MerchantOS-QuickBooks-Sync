@@ -71,7 +71,11 @@ else
 $start_date = new DateTime($setup_sess_access->start_date);
 
 // we need to get the last date synced and if start_date is <= then set it to that plus 1 day
-
+$last_success_date = mosqb_database::getLastSuccessfulDataDate($login_sess_access->account_id);
+if ($last_success_date)
+{
+	$start_date = new DateTime($last_success_date->format('c') . ' + 1 day');
+}
 
 // data delay is an offset from todays date that DateTime knows how to translate
 $end_date = new DateTime($setup_sess_access->data_delay);
@@ -81,10 +85,17 @@ if (isset($_GET['date'])) {
 	if ($one_date > $end_date)
 	{
 		// we can't process a date this recent, it's against our data delay setting
-		return "{\"error\":\"Sync date is beyond your data delay setting.\"}";
+		echo returnOutput("{\"error\":\"Sync date is beyond your data delay setting.\"}");
+		exit;
 	}
 	$start_date = $one_date;
 	$end_date = $one_date;
+}
+
+if (mosqb_database::hasSyncSuccessDurring($login_sess_access->account_id,$start_date,$end_date))
+{
+	echo returnOutput("{\"error\":\"Sync date is beyond your data delay setting.\"}");
+	exit;
 }
 
 require_once("Sync/MerchantOStoQuickBooks.class.php");
@@ -131,6 +142,11 @@ $log = $mosqb_sync->sync($start_date,$end_date);
 
 if (count($log)>0)
 {
+	if (isset($_GET['resync_account_log_id']))
+	{
+		// delete the log entries for the previous sync of this day if we are doing a resync
+		mosqb_database::deleteAccountLogEntry($login_sess_access->account_id,$_GET['resync_account_log_id']);
+	}
 	mosqb_database::writeAccountLogEntries($login_sess_access->account_id,$log);
 }
 
