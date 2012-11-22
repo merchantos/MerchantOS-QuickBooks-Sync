@@ -2,17 +2,40 @@
 
 class IntuitAnywhere
 {
+	/**
+	 * @var SessionAccess Place to store and retrieve information about this API connection. May be session specific or persistant (database).
+	 */
 	protected $store;
+	/**
+	 * @var string OAuth consumer key.
+	 */
 	protected $consumerKey;
+	/**
+	 * @var string OAuth authorize URI for IntuitAnywhere
+	 */
 	protected $authorizeURI;
+	/**
+	 * @var string Display name of this application for use in OAuth authorize process.
+	 */
 	protected $displayName;
+	/**
+	 * @var string The URL to return back to after OAuth authorization is done.
+	 */
 	protected $callbackURL;
 	
+	/**
+	 * Create an instance of IntuitAnywhere for access.
+	 * @param SessionAccess $store Place to store and retrieve information about this API connection. May be session specific or persistant (database).
+	 */
 	public function __construct($store)
 	{
 		$this->store = $store;
 	}
 	
+	/**
+	 * Are we already authorized and ready to make API calls?
+	 * @return boolean Are we authorized and ready to go? True == ready to go.
+	 */
 	public function isUserAuthorized()
 	{
 		if (!isset($this->store->realmId))
@@ -22,6 +45,10 @@ class IntuitAnywhere
 		return true;
 	}
 	
+	/**
+	 * Is this a connection to QuickBooks Online Edition
+	 * @return boolean True if this is a connection to QuickBooks Online Edition (not Desktop)
+	 */
 	public function isQBO()
 	{
 		if (!isset($this->store->dataSource))
@@ -35,6 +62,10 @@ class IntuitAnywhere
 		return false;
 	}
 	
+	/**
+	 * Is this a connection to QuickBooks Desktop
+	 * @return boolean True if this is a connection to QuickBooks Desktop (not Online)
+	 */
 	public function isQBD()
 	{
 		if (!isset($this->store->dataSource))
@@ -48,6 +79,14 @@ class IntuitAnywhere
 		return false;
 	}
 	
+	/**
+	 * Make sure we have an authorized and ready to go OAuth connection. If $interactive=false will fail if we do not without going through authorize process.
+	 * @param SessionAccess $oauth_store Place to store and retrieve information about the OAuth connection. Can be session specific or persistant (database), this class doesn't care.
+	 * @param string $displayName Display name of this application for use in OAuth authorize process.
+	 * @param string $callbackURL The URL to return back to after OAuth authorization is done.
+	 * @param array $options OAuth connection options: array("consumer_key"=>Required,"authorize_uri"=>Required)
+	 * @param boolean $interactive true=go through with entire OAuth process if neccesary (redirect user). false=fail if OAuth connection not already established and ready to use.
+	 */
 	public function initOAuth($oauth_store,$displayName,$callbackURL,$options,$interactive=true)
 	{
 		require_once("oauth/library/OAuthStore.php");
@@ -94,6 +133,9 @@ class IntuitAnywhere
 		}
 	}
 	
+	/**
+	 * Go through the OAuth authorization process (redirect to Intuit and wait for return back)
+	 */
 	protected function _authorize()
 	{
 		//  STEP 1:  If we do not have an OAuth token yet, go get one
@@ -108,7 +150,7 @@ class IntuitAnywhere
 			// get a request token
 			$tokenResultParams = OAuthRequester::requestRequestToken($this->consumerKey, 0, $getAuthTokenParams);
 	
-			//  redirect to the google authorization page, they will redirect back
+			//  redirect to the intui authorization page, they will redirect back
 			header("Location: " . $this->authorizeURI . "?oauth_token=" . $tokenResultParams['token']);
 			exit;
 		}
@@ -145,6 +187,9 @@ class IntuitAnywhere
 		return true;
 	}
 	
+	/**
+	 * IntuitAnywhere API calls require a different URL depending on the user's account. This retrieves the URL to use and stores it for later use when making calls.
+	 */
 	protected function _getBaseURI()
 	{
 		$extra_headers = array(
@@ -182,6 +227,10 @@ class IntuitAnywhere
 		$this->store->BaseURI = (string)$qbo_xml->CurrentCompany->BaseURI;
 	}
 	
+	/**
+	 * Handle an error from the API.
+	 * @throws Exception Package the error into an exception.
+	 */
 	protected function _handleError($result,$message)
 	{
 		if (!isset($result['code']))
@@ -271,6 +320,12 @@ class IntuitAnywhere
 		}
 	}
 	
+	/**
+	 * Build the URL for the query
+	 * @param string $objectName The name of the object we are querying.
+	 * @param string|null $objectID The id of the object we are querying if we are querying a specific object and not a set.
+	 * @return string The URL
+	 */
 	protected function _getQueryURL($objectName,$objectID=null)
 	{
 		if (!isset($this->store->BaseURI))
@@ -306,6 +361,14 @@ class IntuitAnywhere
 		return $url;
 	}
 	
+	/**
+	 * Run a query against the IntuitAnywhere API using our OAuth connection.
+	 * @param string $objectName The object we are querying.
+	 * @param string $objectID The id of the object we are querying if we are querying just one object (or NULL otherwise).
+	 * @param string $method (default="GET"). HTTP method. GET/POST/DELETE
+	 * @param string $params GET or POST parameters.
+	 * @param string $body A POST body.
+	 */
 	public function query($objectName,$objectID=null,$method="GET",$params=null,$body=null)
 	{
 		$curl_opt = array(CURLOPT_ENCODING=>1,CURLOPT_TIMEOUT=>120,CURLOPT_CONNECTTIMEOUT=>20);
@@ -346,6 +409,10 @@ class IntuitAnywhere
 		return $result['body'];
 	}
 	
+	/**
+	 * Query Intuit to get information about the user.
+	 * @return array Array of user information: "handle", "FirstName", "LastName", "EmailAddress", "ScreenName", "IsVerified"
+	 */
 	public function getCurrentUser()
 	{
 		$request = new OAuthRequester("https://appcenter.intuit.com/api/v1/user/current","GET");
@@ -390,6 +457,10 @@ class IntuitAnywhere
 		);
 	}
 	
+	/**
+	 * Get the HTML code for the BlueDot menu.
+	 * @return string HTML for the BlueDot menu.
+	 */
 	public function getMenu()
 	{
 		$request = new OAuthRequester("https://appcenter.intuit.com/api/v1/Account/AppMenu","GET");
@@ -404,6 +475,10 @@ class IntuitAnywhere
 		return $result['body'];
 	}
 	
+	/**
+	 * Issue an OAuth disconnect to destroy the OAuth connection. Re-authorization will be neccessary after this point.
+	 * @return boolean true=success, false=failed.
+	 */
 	public function disconnect()
 	{
 		$request = new OAuthRequester("https://appcenter.intuit.com/api/v1/Connection/Disconnect","GET");
@@ -418,6 +493,10 @@ class IntuitAnywhere
 		return true;
 	}
 	
+	/**
+	 * Renew the OAuth connection to extend the TTL of the token.
+	 * @return boolean true=success, false=failed.
+	 */
 	public function reconnect()
 	{
 		$request = new OAuthRequester("https://appcenter.intuit.com/api/v1/Connection/Reconnect","GET");
