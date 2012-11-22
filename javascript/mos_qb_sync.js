@@ -1,8 +1,7 @@
 mosqb = {
 	error:function (msg) {
-		/**
-		 * @todo Display error msg
-		 */
+		$("#errors ul").append("<li>" + msg + "</li>");
+		$("#errors").show();
 	},
 	sections:{
 		activate: function(section_name) {
@@ -28,41 +27,107 @@ mosqb = {
 				window.location = return_url;
 			}
 			
-			$.when(mosqb.dashboard.loadLog()).done(function(data) {
+			$.when(mosqb.dashboard.loadHistory(),mosqb.dashboard.loadAlerts()).done(function(data) {
 				$('#loading').hide();
 				$('#dashboard').show();
 			});
 		},
-		syncNow: function (date) {
+		syncNow: function (date,account_log_id) {
 			var query = "";
 			if (date) {
 				query = "?date=" + date;
+				if (account_log_id)
+				{
+					query += "&resync_account_log_id=" + account_log_id;
+				}
 			}
 			return $.getJSON("./jsonapi/SyncNow.json.php" + query).done(function (result) {
 				if (result.success) {
-					mosqb.dashboard.loadLog();
-				} else if (result.error) {
+					mosqb.dashboard.loadHistory();
+					mosqb.dashboard.loadAlerts();
+				}
+				if (result.error) {
 					mosqb.error(result.error);
 				}
 			});
 		},
-		loadLog: function() {
-			return $.getJSON("./jsonapi/LoadLog.json.php").success(function (data) {
-				$("#dashboard dl").children().remove();
-				if (data.length == 0) {
-					$("#dashboard dl").append("<dt>No Events</dt><dd>Hit 'Sync Now' if you'd like to get started pushing your data</dt>");
-				} else {
-					$.each(data,function(i,value) {
-						if (value['imported']) {
-							$("#dashboard dl").append("<dt>" + value['date'] + "</dt><dd>" + value['msg'] + "</dd>");
+		loadHistory: function(page) {
+			mosqb.dashboard._loadLog({
+				selector:"#dashboard dl.history",
+				callback:this.loadHistory,
+				page:(page?page:1),
+				alerts:0
+			});
+		},
+		loadAlerts: function(page) {
+			mosqb.dashboard._loadLog({
+				selector:"#dashboard dl.alerts",
+				callback:this.loadAlerts,
+				page:(page?page:1),
+				alerts:1
+			});
+		},
+		_loadLog: function(options) {
+			var selector = (options && options.selector ? options.selector : "#dashboard dl.alerts");
+			var page = (options && options.page ? options.page : 1);
+			var alerts = (options && options.alerts ? options.alerts : 0);
+			var callback = (options && options.callback ? options.callback : this.loadHistory);
+			return $.getJSON("./jsonapi/LoadLog.json.php?page="+page+"&alerts="+alerts).success(function (data) {
+				var parent_dl = $(selector);
+				parent_dl.children().remove();
+				if (data.log.length > 0) {
+					if (alerts==1) {
+						parent_dl.parent().show();
+					}
+					$.each(data.log,function(i,value) {
+						var dismiss = "";
+						if (alerts==1) {
+							dismiss = " <a href='#dismiss-alert' alert_id='" + value['account_log_id'] + "'>Dismiss</a>";
+						}
+						if (value['success']) {
+							parent_dl.append("<dt>" + value['date'] + "</dt><dd>" + value['msg'] + dismiss + "</dd>");
 						} else {
-							$("#dashboard dl").append("<dt>" + value['date'] + "</dt><dd>" + value['msg'] + " (<a href='#re-sync-day' rday='"+ value['date'] +"'>Re-Sync Day</a>)</dd>");
+							parent_dl.append("<dt>" + value['date'] + "</dt><dd>" + value['msg'] + " <a href='#re-sync-day' rday='"+ value['date'] +"' account_log_id='" + value['account_log_id'] + "'>Re-Sync</a>" + dismiss +"</dd>");
 						}
 					});
-					$("a[href='#re-sync-day']").click(function () {
-						var date = $(this).attr('rday');
-						mosqb.dashboard.syncNow(date);
-					});
+				} else if (alerts==0) {
+					parent_dl.append("<dt>No Events</dt><dd>Hit 'Sync Now' if you'd like to get started pushing your data</dt>");
+				} else {
+					parent_dl.parent().hide();
+				}
+				var next = $("<a href='#next'>Next &raquo;</a>");
+				next.click(function () {
+					callback(page+1);
+				});
+				var previous = $("<a href='#next'>&laquo; Previous</a>");
+				previous.click(function () {
+					callback(page-1);
+				});
+				if (data.page > 1) {
+					$("#dashboard dl.history").append(previous);
+					if (data.count == 16) {
+						parent_dl.append(" ").append(next);
+					}
+				} else if (data.count == 16) {
+					parent_dl.append(next);
+				}
+				if (data.error) {
+					mosqb.error(data.error);
+				}
+			});
+		},
+		dismissAlert: function(href)
+		{
+			var alert_id = $(href).attr("alert_id");
+			if ($(href).parent().parent().find("dt").length == 1) {
+				//      dt       dl       div
+				$(href).parent().parent().parent().hide();
+			}
+			$(href).parent().prev().remove();
+			$(href).parent().remove();
+			$.getJSON("./jsonapi/DismissAlert.json.php?account_log_id="+alert_id).success(function (data) {
+				if (data.error) {
+					mosqb.error(data.error);
 				}
 			});
 		}
@@ -124,16 +189,29 @@ mosqb = {
 						if (result.success) {
 							mosqb.sections.activate('dashboard');
 						}
+						if (result.error) {
+							mosqb.error(result.error);
+						}
 					});
 				return false;
 			});
 			
-			var accounts_promise = $.getJSON("./jsonapi/GetIntuitAccounts.json.php");
-			var settings_promise = $.getJSON("./jsonapi/LoadSettings.json.php");
-			var shops_promise = $.getJSON("./jsonapi/GetMerchantOSShops.json.php");
+			var accounts_promise = $.getJSON("./jsonapi/GetIntuitAccounts.json.php").success(function (data) {
+				if (data.error) {
+					mosqb.error(data.error);
+				}});
+			var settings_promise = $.getJSON("./jsonapi/LoadSettings.json.php").success(function (data) {
+				if (data.error) {
+					mosqb.error(data.error);
+				}});
+			var shops_promise = $.getJSON("./jsonapi/GetMerchantOSShops.json.php").success(function (data) {
+				if (data.error) {
+					mosqb.error(data.error);
+				}});
 			
 			$.when(accounts_promise,settings_promise,shops_promise).done(function (accounts_data,settings_data,shops_data) {
 				$("select.qb_account_list option").remove();
+				$("select.qb_account_list").append("<option value='0' selected='selected' disabled='disabled'>Choose Account</option>");
 				$.each(accounts_data[0],function(i,account) {
 					if (account.AccountParentId>0) {
 						if (!mosqb.settings.qb.AccountChildren[account.AccountParentId]) {
@@ -144,6 +222,12 @@ mosqb = {
 					} else {
 						$("select.qb_account_list").append("<option value='"+account.Id+"'>"+account.Name+"</option>");
 					}
+				});
+				
+				// select default accounts
+				$("select.qb_account_list").each(function () {
+					var default_value = $(this).find('option:contains("'+$(this).attr("default_account")+'")').val();
+					$(this).val(default_value);
 				});
 				
 				$("#shop_locations ol").children().remove();
@@ -238,10 +322,30 @@ $(document).ready(function() {
 		syncing = true;
 		var button = $(this);
 		button.html("Syncing...");
-		$.when(mosqb.dashboard.syncNow()).done(function (data) {
+		mosqb.dashboard.syncNow().done(function (data) {
 			button.html("Sync Now");
 			syncing = false;
 		});
+	});
+	
+	$("a[href='#re-sync-day']").live("click",function () {
+		var date = $(this).attr("rday");
+		var account_log_id = $(this).attr("account_log_id");
+		var button = $("a[href='#syncnow']");
+		button.html("Syncing...");
+		mosqb.dashboard.syncNow(date,account_log_id).done(function (data) {
+			button.html("Sync Now");
+			syncing = false;
+		});
+	});
+	
+	$("a[href='#dismiss-alert']").live("click",function () {
+		mosqb.dashboard.dismissAlert(this);
+	});
+	
+	$("#errors button").click(function () {
+		$("#errors ul li").remove();
+		$("#errors").hide();
 	});
 });
 
