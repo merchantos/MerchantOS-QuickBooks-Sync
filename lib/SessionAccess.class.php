@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * Abstraction for session access that allows more control over how and where data is stored.
+ */
 class SessionAccess
 {
 	private $type;
@@ -38,19 +41,40 @@ class SessionAccess
 			unset($_SESSION[$this->type][$name]);
 		}
 	}
+	
+	/**
+	 *  Return this store as an array.
+	 *  @return array The values in this store.
+	 */
 	function getArray()
 	{
 		return $_SESSION[$this->type];
 	}
+	
+	/**
+	 * Take an array and load it into this store.
+	 * @param array $arr The string indexed array.
+	 */
 	function loadArray($arr)
 	{
 		$_SESSION[$this->type] = $arr;
 	}
 	
+	/**
+	 * Cache data in the Session for some period of time.
+	 * @param string $name Name of the cache
+	 * @param mixed $value Value to cache
+	 */
 	function storeCache($name,$value)
 	{
 		$_SESSION[$this->type][$name."_cache"] = array("time"=>time(),"value"=>$value);
 	}
+	
+	/**
+	 * Retrieve data from the cache, checks the timeout before returning to make sure it's still valid.
+	 * @param string $name Name of the cache that was stored
+	 * @return mixed| The cache or null if cache is not set or expired.
+	 */
 	function getCache($name,$timeout)
 	{
 		if (!isset($_SESSION[$this->type][$name."_cache"]))
@@ -65,6 +89,9 @@ class SessionAccess
 		return null;
 	}
 	
+	/**
+	 * Clear this session storage.
+	 */
 	function clear()
 	{
 		$_SESSION[$this->type] = array();
