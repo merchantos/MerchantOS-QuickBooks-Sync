@@ -2,7 +2,8 @@
 
 require_once("IntuitAnywhere/DataModel.class.php");
 
-class IntuitAnywhere_Bill extends IntuitAnywhere_DataModel
+
+class IntuitAnywhere_Vendor extends IntuitAnywhere_DataModel
 {
 	public $Name;
 	public $Desc;
