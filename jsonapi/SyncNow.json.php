@@ -138,7 +138,14 @@ if (!$send_orders)
 	$mosqb_sync->setNoOrders();
 }
 
-$log = $mosqb_sync->sync($start_date,$end_date);
+try
+{
+	$log = $mosqb_sync->sync($start_date,$end_date);
+}
+catch (Exception $e)
+{
+	$log = array(array("msg"=>"Error: " . $e->getMessages(),"success"=>false,"alert"=>true));
+}
 
 if (count($log)>0)
 {
