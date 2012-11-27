@@ -9,6 +9,7 @@ class IntuitAnywhere_JournalEntryLine extends IntuitAnywhere_DataModel
 	public $PostingType;
 	public $AccountId;
 	public $EntityId;
+	public $ClassId;
 	
 	protected function _getQBOObjectName() { new Exception("JournalEntryLine can not be queried individually."); }
 	protected function _getQBOObjectNamePlural() { new Exception("JournalEntryLine can not be queried individually."); }
@@ -26,6 +27,7 @@ class IntuitAnywhere_JournalEntryLine extends IntuitAnywhere_DataModel
 		$this->PostingType = (string)$xml->PostingType;
 		$this->AccountId = (integer)$xml->AccountId;
 		$this->EntityId = (integer)$xml->EntityId;
+		$this->ClassId = (integer)$xml->ClassId;
 	}
 	
 	protected function _loadFromQBDXML($xml)
@@ -48,6 +50,11 @@ class IntuitAnywhere_JournalEntryLine extends IntuitAnywhere_DataModel
 		{
 			$entity = '<EntityId idDomain="QBO">' . $this->EntityId . '</EntityId>';
 		}
+		$class = "";
+		if (isset($this->ClassId))
+		{
+			$class = '<ClassId idDomain="QBO">' . $this->ClassId . '</ClassId>';
+		}
 		return <<<JOURNALENTRYLINEQBO
 <Line>
 	<Desc>$desc</Desc>
@@ -55,6 +62,7 @@ class IntuitAnywhere_JournalEntryLine extends IntuitAnywhere_DataModel
 	<PostingType>$postingtype</PostingType>
 	<AccountId idDomain="QBO">$accountid</AccountId>
 	$entity
+	$class
 </Line>
 JOURNALENTRYLINEQBO;
 	}
