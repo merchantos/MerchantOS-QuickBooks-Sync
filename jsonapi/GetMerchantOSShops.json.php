@@ -5,8 +5,6 @@ GLOBAL $_OAUTH_INTUIT_CONFIG;
 
 require_once("session.inc.php");
 
-require_once("MerchantOS/Shop.class.php");
-
 $merchantos_sess_access = new SessionAccess("merchantos");
 
 header("Content-Type: application/json");

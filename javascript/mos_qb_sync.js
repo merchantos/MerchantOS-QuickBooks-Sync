@@ -165,6 +165,7 @@ mosqb = {
 				mosqb.settings.addSubaccounts($(this));
 			});
 			
+			/*
 			$(".setup_group_toggle input").change(function () {
 				var group = $(this).attr('id').slice(11); // remove setup_send_
 				if ($(this).is(':checked')) {
@@ -173,6 +174,7 @@ mosqb = {
 					$("#setup_group_"+group).hide();
 				}
 			});
+			*/
 			
 			$("#settings_form").submit(function () {
 				var form_data = $(this).serializeArray();
@@ -208,8 +210,21 @@ mosqb = {
 				if (data.error) {
 					mosqb.error(data.error);
 				}});
+			var tax_categories_promise = $.getJSON("./jsonapi/GetMerchantOSTaxCategories.json.php").success(function (data) {
+				if (data.error) {
+					mosqb.error(data.error);
+				}});
 			
-			$.when(accounts_promise,settings_promise,shops_promise).done(function (accounts_data,settings_data,shops_data) {
+			$.when(accounts_promise,settings_promise,shops_promise,tax_categories_promise).done(function (accounts_data,settings_data,shops_data,tax_categories_data) {
+				// list tax categories for mapping
+				$("#setup_group_tax div.setup_category").children().remove();
+				$.each(tax_categories_data[0],function(i,tax_cat) {
+					$("#setup_group_tax div.setup_category")
+						.append('<label for="setup_tax_category_'+tax_cat.taxCategoryID+'">'+tax_cat.name+'</label>')
+						.append('<div class="account_select"><select class="qb_account_list" id="setup_tax_category_'+tax_cat.taxCategoryID+'" name="setup_tax['+tax_cat.name+']" default_account="Sales Tax Agency Payable"><option value="loading">Loading...</option></select></div>');
+				});
+				
+				// fill the select lists
 				$("select.qb_account_list option").remove();
 				$("select.qb_account_list").append("<option value='0' selected='selected' disabled='disabled'>Choose Account</option>");
 				$.each(accounts_data[0],function(i,account) {
@@ -230,6 +245,7 @@ mosqb = {
 					$(this).val(default_value);
 				});
 				
+				// list shops for selection
 				$("#shop_locations ol").children().remove();
 				$.each(shops_data[0],function(i,shop) {
 					$("#shop_locations ol").append('<li><label><input type="checkbox" id="setup_shop_'+shop.shopID+'" name="setup_shops['+shop.shopID+']" class="setup_field" checked="checked"> '+shop.name+'</label></li>');
