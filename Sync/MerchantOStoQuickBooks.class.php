@@ -1,6 +1,7 @@
 <?php
 
 class Sync_MerchantOStoQuickBooks {
+	static protected $_MOS_CUSTOMER = "POS Customers (MerchantOS)";
 	/**
 	 * @var MerchantOS_Accounting
 	 */
@@ -30,9 +31,38 @@ class Sync_MerchantOStoQuickBooks {
 	 */
 	protected $_send_orders;
 	/**
+	 * @var array Array of shops (indexed by shopID) to include in the sync. array(shopID=>true/false/null) if the shopID = true it will be included, otherwise it will not.
+	 */
+	protected $_shops;
+	/**
+	 * @var array Array of tax account mappings (indexed by tax name). array(taxName=>AccountId).
+	 */
+	protected $_tax_accounts;
+	/**
 	 * @var array The data we are compiling to sync
 	 */
 	protected $_days_buffer;
+	
+	/*
+	 * @var array of cached IntuitAnywhere_Vendor objects that were found by querying. Indexed by Vendor->Name
+	 */
+	protected $_qb_vendors;
+	/*
+	 * @var array of cached IntuitAnywhere_Account objects that were found by querying. Indexed by Accout->Name + Account->ParentAccountId
+	 */
+	protected $_qb_accounts;
+	/*
+	 * @var array of cached IntuitAnywhere_Class objects that were found by querying. Indexed by Class->Name
+	 */
+	protected $_qb_classes;
+	/*
+	 * @var array of cached IntuitAnywhere_Customer objects that were found by querying. Indexed by Customer->Name
+	 */
+	protected $_qb_customers;
+	/**
+	 * @var array of cached IntuitAnywhere_PaymentMethod objects that were found by querying. Indexed by PaymentMethod->Name
+	 */
+	protected $_qb_payment_methods;
 	
 	public function __construct($mos_accounting,$i_anywhere)
 	{
@@ -42,6 +72,8 @@ class Sync_MerchantOStoQuickBooks {
 		$this->_send_sales = true;
 		$this->_send_cogs = true;
 		$this->_send_orders = true;
+		$this->_shops = array();
+		$this->_tax_accounts = array();
 	}
 	
 	public function setAccountMapping($map)
@@ -69,6 +101,16 @@ class Sync_MerchantOStoQuickBooks {
 		$this->_send_orders = false;
 	}
 	
+	public function setSyncShop($id)
+	{
+		$this->_shops[$id] = true;
+	}
+	
+	public function addTaxAccount($name,$id)
+	{
+		$this->_tax_accounts[$name] = $id;
+	}
+	
 	/**
 	 * Sync MerchantOS to QuickBooks
 	 * @param DateTime $start_date The first date in the range to sync for
@@ -77,9 +119,17 @@ class Sync_MerchantOStoQuickBooks {
 	 */
 	public function sync($start_date,$end_date)
 	{
+		$this->_checkSyncSettings();
 		$sales_cogs_logs = $this->_syncSalesCOGS($start_date,$end_date);
 		$orders_logs = $this->_syncOrders($start_date,$end_date);
 		return array_merge($sales_cogs_logs,$orders_logs);
+	}
+	
+	protected function _checkSyncSettings()
+	{
+		/**
+		 * @todo Check settings against QB and MerchantOS to make sure nothing has changed with accounts/shops/taxes etc
+		 */
 	}
 	
 	protected function _syncOrders($start_date,$end_date)
@@ -107,10 +157,25 @@ class Sync_MerchantOStoQuickBooks {
 		}
 		
 		require_once("IntuitAnywhere/JournalEntry.class.php");
+		require_once("IntuitAnywhere/Payment.class.php");
+		
+		$multi_shop = false;
+		if (count($this->_days_buffer)>1)
+		{
+			$multi_shop = true;
+		}
 		
 		$logs = array();
+		$shopName = "";
 		foreach ($this->_days_buffer as $shopID=>$sales_day_shop)
 		{
+			$shopName = $this->_getShopName($shopID);
+			$shopName_msg = "";
+			if ($multi_shop)
+			{
+				$shopName_msg = "$shopName: ";
+			}
+			
 			foreach ($sales_day_shop as $date=>$sales_data)
 			{
 				$sales_total = round($this->_getSalesTotal($sales_data),2);
@@ -125,32 +190,32 @@ class Sync_MerchantOStoQuickBooks {
 				$balance -= $payments_total;
 				if (round($balance)!=0)
 				{
-					$logs[] = array("date"=>$date,"msg"=>"Records contained unbalanced sales.","success"=>false,"alert"=>true);
+					$logs[] = array("date"=>$date,"msg"=>"{$shopName_msg}Records contained unbalanced sales.","success"=>false,"alert"=>true);
 					continue;
 				}
 				
 				if ($this->_send_sales)
 				{
-					if ($this->_sendSales($date,$sales_data))
+					if ($this->_sendSales($date,$shopName,$sales_data))
 					{
-						$logs[] = array("date"=>$date,"msg"=>"Sent \$$sales_total Sales, \$$discounts_total Discounts, \$$tax_total Tax, \$$payments_total Payments.","success"=>true,"alert"=>false);
+						$logs[] = array("date"=>$date,"msg"=>"{$shopName_msg}Sent \$$sales_total Sales, \$$discounts_total Discounts, \$$tax_total Tax, \$$payments_total Payments.","success"=>true,"alert"=>false);
 					}
 					else
 					{
-						$logs[] = array("date"=>$date,"msg"=>"$0 in Sales.","success"=>true,"alert"=>false);
+						$logs[] = array("date"=>$date,"msg"=>"{$shopName_msg}$0 in Sales.","success"=>true,"alert"=>false);
 					}
 				}
 				
 				if ($this->_send_cogs)
 				{
 					$cogs_total = round($this->_getCOGSTotal($sales_data),2);
-					if ($this->_sendCOGS($date,$sales_data))
+					if ($this->_sendCOGS($date,$shopName,$sales_data))
 					{
-						$logs[] = array("date"=>$date,"msg"=>"Sent \$$cogs_total in Cost of Goods Sold.","success"=>true,"alert"=>false);
+						$logs[] = array("date"=>$date,"msg"=>"{$shopName_msg}Sent \$$cogs_total in Cost of Goods Sold.","success"=>true,"alert"=>false);
 					}
 					else
 					{
-						$logs[] = array("date"=>$date,"msg"=>"$0 in COGS.","success"=>true,"alert"=>false);
+						$logs[] = array("date"=>$date,"msg"=>"{$shopName_msg}$0 in COGS.","success"=>true,"alert"=>false);
 					}
 				}
 			}
@@ -158,28 +223,37 @@ class Sync_MerchantOStoQuickBooks {
 		return $logs;
 	}
 	
-	protected function _sendSales($date,$sales_data)
+	protected function _sendSales($date,$shopName,$sales_data)
 	{
 		$sale_lines = $this->_getSaleLines($date,$sales_data);
 		$discount_lines = $this->_getDiscountLines($date,$sales_data);
 		$tax_lines = $this->_getTaxLines($date,$sales_data);
-		$payment_lines = $this->_getPaymentLines($date,$sales_data);
+		$payment_lines = $this->_getPaymentJournalEntryLines($date,$sales_data);
 		
 		$lines = array_merge($sale_lines,$discount_lines,$tax_lines,$payment_lines);
 		
 		if (count($lines)>0)
 		{
+			// actual Payment objects
+			$payments = $this->_getPayments($date,$sales_data);
+			
 			$journalentry = new IntuitAnywhere_JournalEntry($this->_i_anywhere);
 			$journalentry->Lines = $lines;
 			$journalentry->HeaderTxnDate = new DateTime($date);
-			$journalentry->HeaderNote = "Retail Sales from MerchantOS $date";
+			$journalentry->HeaderNote = "Retail sales from MerchantOS on $date from $shopName";
 			$journalentry->save();
+			
+			foreach ($payments as $payment)
+			{
+				$payment->save();
+			}
+			
 			return true;
 		}
 		return false;
 	}
 	
-	protected function _sendCOGS($date,$sales_data)
+	protected function _sendCOGS($date,$shopName,$sales_data)
 	{
 		$cogs_inventory_lines = $this->_getCOGSInventoryLines($date,$sales_data);
 		
@@ -188,7 +262,7 @@ class Sync_MerchantOStoQuickBooks {
 			$journalentry = new IntuitAnywhere_JournalEntry($this->_i_anywhere);
 			$journalentry->Lines = $cogs_inventory_lines;
 			$journalentry->HeaderTxnDate = new DateTime($date);
-			$journalentry->HeaderNote = "COGS and Inventory from MerchantOS $date";
+			$journalentry->HeaderNote = "COGS and inventory from MerchantOS on $date from $shopName";
 			$journalentry->save();
 			return true;
 		}
@@ -300,21 +374,28 @@ class Sync_MerchantOStoQuickBooks {
 		{
 			return array();
 		}
-		$line = new IntuitAnywhere_JournalEntryLine($this->_i_anywhere);
-		$line->AccountId = $this->_accounts_map['sales'];
-		$line->Desc = "MerchantOS sales $date";
-		$line->Amount = $this->_getSalesTotal($sales_data);
-		/*foreach ($sales_data['sales'] as $tax_class=>$sales_subtotal)
-		{
-			$line->Amount += (float)$sales_subtotal;
-		}*/
 		
-		if (!$this->_prepareLineAmount($line,"Credit","Debit"))
+		$lines = array();
+		
+		foreach ($sales_data['sales'] as $tax_class=>$sales_subtotal)
 		{
-			return array();
+			$line = new IntuitAnywhere_JournalEntryLine($this->_i_anywhere);
+			$line->AccountId = $this->_accounts_map['sales'];
+			$line->Desc = "MerchantOS $tax_class sales on $date";
+			$line->Amount = (float)$sales_subtotal;
+			
+			if (!$this->_prepareLineAmount($line,"Credit","Debit"))
+			{
+				continue;
+			}
+			
+			$line->ClassId = $this->_getQBClassNamed($tax_class);
+			
+			$lines[] = $line;
 		}
 		
-		return array($line);
+		
+		return $lines;
 	}
 	
 	protected function _getDiscountLines($date,$sales_data)
@@ -342,28 +423,37 @@ class Sync_MerchantOStoQuickBooks {
 		{
 			return array();
 		}
-		/**
-		 * @todo Need let them pick a tax vendor for each sales tax
-		 */
-		$line = new IntuitAnywhere_JournalEntryLine($this->_i_anywhere);
-		$line->AccountId = $this->_accounts_map['tax'];
-		$line->Desc = "MerchantOS sales tax $date";
-		$line->Amount = $this->_getTaxTotal($sales_data);
-		/*
+		
+		$lines = array();
+		
 		foreach ($sales_data['taxes'] as $tax_vendor=>$tax_subtotal)
 		{
-			$line->Amount += (float)$tax_subtotal;
-		}
-		*/
-		if (!$this->_prepareLineAmount($line,"Credit","Debit"))
-		{
-			return array();
+			if (!isset($this->_tax_accounts[$tax_vendor]))
+			{
+				throw new Exception($tax_vendor . " does not have a mapped sales tax account.");
+			}
+			
+			$line = new IntuitAnywhere_JournalEntryLine($this->_i_anywhere);
+			$line->AccountId = $this->_tax_accounts[$tax_vendor];
+			$line->Desc = "MerchantOS $tax_vendor sales tax on $date";
+			$line->Amount = (float)$tax_subtotal;
+			
+			if (!$this->_prepareLineAmount($line,"Credit","Debit"))
+			{
+				continue;
+			}
+			
+			$lines[] = $line;
 		}
 		
-		return array($line);
+		return $lines;
 	}
 	
-	protected function _getPaymentLines($date,$sales_data)
+	/**
+	 * This gets a JournalEntryLine for putting payment needed into Accounts Receivable
+	 * there is another function for sending the payment that credits accounts receivable and puts money in undeposited funds
+	 */
+	protected function _getPaymentJournalEntryLines($date,$sales_data)
 	{
 		if (!isset($sales_data['payments']))
 		{
@@ -372,20 +462,25 @@ class Sync_MerchantOStoQuickBooks {
 		
 		$line = new IntuitAnywhere_JournalEntryLine($this->_i_anywhere);
 		$line->AccountId = $this->_accounts_map['payments'];
-		$line->Desc = "MerchantOS payments $date";
+		$line->Desc = "MerchantOS $payment_type payments on $date";
 		$line->Amount = $this->_getPaymentsTotal($sales_data);
-		/*
-		foreach ($sales_data['payments'] as $payment_type=>$payment_subtotal)
-		{
-			$payment_line->Amount += (float)$payment_subtotal;
-		}
-		*/
+		
 		if (!$this->_prepareLineAmount($line,"Debit","Credit"))
 		{
 			return array();
 		}
 		
+		$line->EntityId = $this->_getQBCustomerNamed(self::$_MOS_CUSTOMER);
+		$line->EntityType = 'CUSTOMER';
+		
 		return array($line);
+	}
+	
+	protected function _getPayments($date,$sales_data)
+	{
+		/**
+		 * @todo Create Payment for each payment_type in the sales_data attach to $_MOS_CUSTOMER and correct PaymentMethod, return an array of Payment objects
+		 */
 	}
 	
 	protected function _getCOGSTotal($sales_data)
@@ -466,5 +561,78 @@ class Sync_MerchantOStoQuickBooks {
 	protected function _endOfDay($end_date)
 	{
 		return $end_date->format("Y-m-d\T23:59:59P");
+	}
+	
+	protected function _getQBPaymentMethodNamed($name)
+	{
+		if (isset($this->_qb_payment_methods[$name]))
+		{
+			return $this->_qb_payment_methods[$name]->Id;
+		}
+		/**
+		 * @todo rest of this
+		 */
+	}
+	
+	protected function _getQBCustomerNamed($name)
+	{
+		if (isset($this->_qb_customers[$name]))
+		{
+			return $this->_qb_customers[$name]->Id;
+		}
+		/**
+		 * @todo rest of this
+		 */
+	}
+	
+	protected function _getQBClassNamed($name)
+	{
+		if (isset($this->_qb_classes[$name]))
+		{
+			return $this->_qb_classes[$name]->Id;
+		}
+		/**
+		 * @todo rest of this
+		 */
+	}
+	
+	protected function _getQBAccountNamed($name,$parent_account_id)
+	{
+		$cache_index = $name . $parent_account_id;
+		if (isset($this->_qb_accounts[$cache_index]))
+		{
+			return $this->_qb_accounts[$cache_index]->Id;
+		}
+		/**
+		 * @todo rest of this
+		 */
+	}
+	
+	protected function _getQBVendorNamed($name)
+	{
+		if (isset($this->_qb_vendors[$name]))
+		{
+			return $this->_qb_vendors[$name]->Id;
+		}
+		
+		require_once("IntuitAnywhere/Vendor.class.php");
+		$ia_vendor = new IntuitAnywhere_Vendor($ianywhere);
+		
+		// search for an existing vendor
+		$filters = array('Name'=>$name);
+		
+		$vendors = $ia_vendor->listAll($filters,1);
+		
+		if (count($vendors)==1)
+		{
+			$this->_qb_vendors[$name] = $vendors[0];
+			return $this->_qb_vendors[$name]->Id;
+		}
+		
+		// couldn't find the vendor so we'll create one
+		$ia_vendor->Name = $name;
+		$ia_vendor->save();
+		$this->_qb_vendors[$name] = $ia_vendor;
+		return $this->_qb_vendors[$name]->Id;
 	}
 }
