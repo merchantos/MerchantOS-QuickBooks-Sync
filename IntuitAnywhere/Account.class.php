@@ -37,7 +37,38 @@ class IntuitAnywhere_Account extends IntuitAnywhere_DataModel
 	
 	protected function _getXMLForQBO()
 	{
-		throw new Exception("Account::get QBO XML, not implemented.");
+		if ($this->Id>0)
+		{
+			throw new Exception("Account::update for QBO not implemented.");
+		}
+		
+		$xml = '<?xml version="1.0" encoding="utf-8"?>
+		<Account xmlns:ns2="http://www.intuit.com/sb/cdm/qbo" xmlns="http://www.intuit.com/sb/cdm/v2">';
+		$xml .= "<Name>" . $this->Name . "</Name>";
+		$xml .= "<Subtype>" . $this->Subtype . "</Subtype>";
+		if (isset($this->Desc))
+		{
+			$xml .= "<Desc>" . $this->Desc . "</Desc>";
+		}
+		if (isset($this->AcctNum))
+		{
+			$xml .= "<AcctNum>" . $this->AcctNum . "</AcctNum>";
+		}
+		if (isset($this->AccountParentId))
+		{
+			$xml .= "<AccountParentId>" . $this->AccountParentId . "</AccountParentId>";
+		}
+		if (isset($this->OpeningBalance))
+		{
+			$xml .= "<OpeningBalance>" . $this->OpeningBalance . "</OpeningBalance>";
+		}
+		if (isset($this->OpeningBalanceDate))
+		{
+			$OpeningBalanceDate = $this->OpeningBalanceDate->format('Y-m-d-H:i:s');
+			$xml .= "<OpeningBalanceDate>" . $OpeningBalanceDate . "</OpeningBalanceDate>";
+		}
+		$xml .= "</Account>";
+		return $xml;
 	}
 	protected function _getXMLForQBD()
 	{

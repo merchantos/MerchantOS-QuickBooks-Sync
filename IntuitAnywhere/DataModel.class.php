@@ -35,13 +35,13 @@ abstract class IntuitAnywhere_DataModel
 		}
 		return $this->_getOneQBD($id);
 	}
-	function listAll($filters=null)
+	function listAll($filters=null,$limit=null)
 	{
 		if ($this->ia->isQBO())
 		{
-			return $this->_listAllQBO($filters);
+			return $this->_listAllQBO($filters,$limit);
 		}
-		return $this->_listAllDBD($filters);
+		return $this->_listAllDBD($filters,$limit);
 	}
 	function save()
 	{
@@ -52,7 +52,7 @@ abstract class IntuitAnywhere_DataModel
 		return $this->_saveQBD();
 	}
 	
-	protected function _listAllDBD($filters)
+	protected function _listAllDBD($filters,$limit=null)
 	{
 		throw new Exception("_listAllDBD: not implemented.");
 	}
@@ -70,21 +70,27 @@ abstract class IntuitAnywhere_DataModel
 		
 		$result_xml = new SimpleXMLElement($result);
 		
+		$this->_loadStandardQBOXML($result_xml);
 		$this->_loadFromQBOXML($result_xml);
 	}
 	
-	protected function _listAllQBO($filters)
+	protected function _listAllQBO($filters,$limit=null)
 	{
 		$page = 1;
 		$per_page = 100;
 		$objects = array();
+		
+		if (isset($limit) && $per_page>$limit)
+		{
+			$per_page = $limit;
+		}
 		
 		$body = null;
 		$params = array();
 		$params["PageNum"] = $page;
 		$params["ResultsPerPage"] = $per_page;
 		
-		if ($filters && count($filters)>0)
+		if (isset($filters) && count($filters)>0)
 		{
 			foreach ($filters as $key=>$value)
 			{
@@ -94,6 +100,7 @@ abstract class IntuitAnywhere_DataModel
 		
 		$classname = get_class($this);
 		
+		$total = 0;
 		while (true)
 		{
 			$result = $this->ia->query($this->_getQBDObjectNamePlural(),null,"POST",$params,$body);
@@ -103,6 +110,7 @@ abstract class IntuitAnywhere_DataModel
 			$qbo_xml = $xml->children($namespaces["qbo"]);
 			
 			$count = (integer)$qbo_xml->Count;
+			$total += $count;
 			if ($count==0)
 			{
 				break;
@@ -111,11 +119,12 @@ abstract class IntuitAnywhere_DataModel
 			foreach ($qbo_xml->CdmCollections->children() as $child)
 			{
 				$object = new $classname($this->ia);
+				$object->_loadStandardQBOXML($child);
 				$object->_loadFromQBOXML($child);
 				$objects[] = $object;
 			}
 			
-			if ($count<$per_page)
+			if ($count<$per_page || (isset($limit) && $total>=$limit))
 			{
 				break;
 			}
@@ -123,5 +132,13 @@ abstract class IntuitAnywhere_DataModel
 		}
 		
 		return $objects;
+	}
+	
+	protected function _loadStandardQBOXML($xml)
+	{
+		$this->Id = (integer)$xml->Id;
+		$this->SyncToken = (integer)$xml->SyncToken;
+		$this->CreateTime = new DateTime((string)$xml->MetaData->CreateTime);
+		$this->LastUpdatedTime = new DateTime((string)$xml->MetaData->LastUpdatedTime);
 	}
 }

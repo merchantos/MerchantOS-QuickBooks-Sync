@@ -9,6 +9,7 @@ class IntuitAnywhere_JournalEntryLine extends IntuitAnywhere_DataModel
 	public $PostingType;
 	public $AccountId;
 	public $EntityId;
+	public $EntityType;
 	public $ClassId;
 	
 	protected function _getQBOObjectName() { new Exception("JournalEntryLine can not be queried individually."); }
@@ -48,7 +49,7 @@ class IntuitAnywhere_JournalEntryLine extends IntuitAnywhere_DataModel
 		$entity = "";
 		if (isset($this->EntityId))
 		{
-			$entity = '<EntityId idDomain="QBO">' . $this->EntityId . '</EntityId>';
+			$entity = '<EntityId idDomain="QBO">' . $this->EntityId . '</EntityId><EntityType>' . $this->EntityType . '</EntityType>';
 		}
 		$class = "";
 		if (isset($this->ClassId))
@@ -94,11 +95,6 @@ class IntuitAnywhere_JournalEntry extends IntuitAnywhere_DataModel
 	
 	protected function _loadFromQBOXML($xml)
 	{
-		$this->Id = (integer)$xml->Id;
-		$this->SyncToken = (integer)$xml->SyncToken;
-		$this->CreateTime = new DateTime((string)$xml->MetaData->CreateTime);
-		$this->LastUpdatedTime = new DateTime((string)$xml->MetaData->LastUpdatedTime);
-		
 		$this->Adjustment = (string)$xml->Header->Adjustment;
 		$this->Note = (string)$xml->Header->Note;
 		$this->HeaderTxnDate = new DateTime((string)$xml->Header->TxnDate);

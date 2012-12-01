@@ -121,11 +121,6 @@ class IntuitAnywhere_Bill extends IntuitAnywhere_DataModel
 <CurrentPage>1</CurrentPage>
 </SearchResults>
 	*/
-		$this->Id = (integer)$xml->Id;
-		$this->SyncToken = (integer)$xml->SyncToken;
-		$this->CreateTime = new DateTime((string)$xml->MetaData->CreateTime);
-		$this->LastUpdatedTime = new DateTime((string)$xml->MetaData->LastUpdatedTime);
-		
 		$this->Adjustment = (string)$xml->Header->Adjustment;
 		$this->Note = (string)$xml->Header->Note;
 		$this->HeaderTxnDate = new DateTime((string)$xml->Header->TxnDate);
