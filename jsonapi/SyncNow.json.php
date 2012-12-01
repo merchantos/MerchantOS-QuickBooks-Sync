@@ -104,16 +104,31 @@ $mos_accounting = new MerchantOS_Accounting($merchantos_sess_access->api_key,$me
 
 $mosqb_sync = new Sync_MerchantOStoQuickBooks($mos_accounting,$ianywhere);
 
+// shops to sync
+foreach ($setup_sess_access->setup_shops as $shopID=>$onoff)
+{
+	if ($onoff === true || $onoff === 'on' || $onoff === 'On')
+	{
+		$mosqb_sync->setSyncShop($shopID);
+	}
+}
+
+foreach ($setup_sess_access->setup_tax as $taxName=>$AccountId)
+{
+	$mosqb_sync->addTaxAccount($taxName,$AccountId);
+}
+
 $mosqb_sync->setAccountMapping(array(
 	"sales"=>$setup_sess_access->sales,
 	"discounts"=>$setup_sess_access->discounts,
-	"tax"=>$setup_sess_access->tax,
-	"payments"=>$setup_sess_access->payments,
+	//"tax"=>$setup_sess_access->tax,
+	//"payments"=>$setup_sess_access->payments,
+	"accounts_receivable"=>$setup_sess_access->accounts_receivable,
 	"credit_accounts"=>$setup_sess_access->credit_accounts,
 	"gift_cards"=>$setup_sess_access->gift_cards,
 	"cogs"=>$setup_sess_access->cogs,
 	"inventory"=>$setup_sess_access->inventory,
-	"orders"=>$setup_sess_access->orders,
+	"orders"=>$setup_sess_access->inventory,
 	"orders_shipping"=>$setup_sess_access->orders_shipping,
 	"orders_other"=>$setup_sess_access->orders_other
 ));
