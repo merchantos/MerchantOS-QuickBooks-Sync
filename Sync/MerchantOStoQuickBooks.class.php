@@ -2,6 +2,7 @@
 
 class Sync_MerchantOStoQuickBooks {
 	static protected $_MOS_CUSTOMER = "POS Customers (MerchantOS)";
+	static protected $_UNDEPOSITED_FUNDS = "Undeposited Funds";
 	/**
 	 * @var MerchantOS_Accounting
 	 */
@@ -460,27 +461,73 @@ class Sync_MerchantOStoQuickBooks {
 			return array();
 		}
 		
+		$lines = array();
+		$non_refund_total=0;
+		
+		// add lines for refund totals, they will not get done as payments
+		foreach ($sales_data['payments'] as $payment_type=>$subtotal)
+		{
+			if ($subtotal>=0)
+			{
+				$non_refund_total += $subtotal;
+				continue;
+			}
+			$line = new IntuitAnywhere_JournalEntryLine($this->_i_anywhere);
+			$line->AccountId = $this->_getQBAccountNamed(self::$_UNDEPOSITED_FUNDS);
+			$line->Desc = "MerchantOS $payment_type refund on $date";
+			$line->Amount = $this->_formatAbsoluteAmount($subtotal);
+			$line->PostingType = "Credit";
+			$line->EntityId = $this->_getQBCustomerNamed(self::$_MOS_CUSTOMER);
+			$line->EntityType = 'CUSTOMER';
+			
+			$lines[] = $line;
+		}
+		
+		if ($non_refund_total <= 0)
+		{
+			return $lines;
+		}
+		
+		// total of payments (non-refund) to accounts receivable
 		$line = new IntuitAnywhere_JournalEntryLine($this->_i_anywhere);
 		$line->AccountId = $this->_accounts_map['payments'];
 		$line->Desc = "MerchantOS $payment_type payments on $date";
-		$line->Amount = $this->_getPaymentsTotal($sales_data);
-		
-		if (!$this->_prepareLineAmount($line,"Debit","Credit"))
-		{
-			return array();
-		}
-		
+		$line->Amount = $this->_formatAbsoluteAmount($non_refund_total);
+		$line->PostingType = "Debit";
 		$line->EntityId = $this->_getQBCustomerNamed(self::$_MOS_CUSTOMER);
 		$line->EntityType = 'CUSTOMER';
 		
-		return array($line);
+		$lines[] = $line;
+		
+		return $lines;
 	}
 	
 	protected function _getPayments($date,$sales_data)
 	{
-		/**
-		 * @todo Create Payment for each payment_type in the sales_data attach to $_MOS_CUSTOMER and correct PaymentMethod, return an array of Payment objects
-		 */
+		if (!isset($sales_data['payments']))
+		{
+			return array();
+		}
+		
+		$payments = array();
+		
+		foreach ($sales_data['payments'] as $payment_type=>$subtotal)
+		{
+			if ($subtotal<=0)
+			{
+				continue;
+			}
+			$payment = new IntuitAnywhere_Payment($this->_i_anywhere);
+			$payment->HeaderTxnDate = new DateTime($date);
+			$payment->HeaderNote = "MerchantOS $payment_type payments on $date";
+			$payment->HeaderCustomerId = $this->_getQBCustomerNamed(self::$_MOS_CUSTOMER);
+			$payment->HeaderPaymentMethodId = $this->_getQBPaymentMethodNamed($payment_type);
+			$payment->HeaderTotalAmt = $this->_formatAbsoluteAmount($subtotal);
+			
+			$payments[] = $payment;
+		}
+		
+		return $payments;
 	}
 	
 	protected function _getCOGSTotal($sales_data)
@@ -535,14 +582,18 @@ class Sync_MerchantOStoQuickBooks {
 		return array();
 	}
 	
+	protected function _formatAbsoluteAmount($amount)
+	{
+		return number_format(abs(round($amount,2)),2,".","");
+	}
+	
 	protected function _prepareLineAmount($line,$positivetype,$negativetype)
 	{
-		$amount = abs(round($line->Amount,2));
-		if ($amount==0)
+		if ($line->Amount==0)
 		{
 			return false;
 		}
-		if ($amount<0)
+		if ($line->Amount<0)
 		{
 			$line->PostingType = $negativetype;
 		}
@@ -550,7 +601,7 @@ class Sync_MerchantOStoQuickBooks {
 		{
 			$line->PostingType = $positivetype;
 		}
-		$line->Amount = number_format($amount,2,".","");
+		$line->Amount = $this->_formatAbsoluteAmount($line->Amount);
 		return true;
 	}
 	
@@ -569,9 +620,26 @@ class Sync_MerchantOStoQuickBooks {
 		{
 			return $this->_qb_payment_methods[$name]->Id;
 		}
-		/**
-		 * @todo rest of this
-		 */
+		
+		require_once("IntuitAnywhere/PaymentMethod.class.php");
+		$ia_payment_method = new IntuitAnywhere_PaymentMethod($ianywhere);
+		
+		// search for an existing PaymentMethod
+		$filters = array('Name'=>$name);
+		
+		$payment_methods = $ia_payment_method->listAll($filters,1);
+		
+		if (count($payment_methods)==1)
+		{
+			$this->_qb_payment_methods[$name] = $payment_methods[0];
+			return $this->_qb_payment_methods[$name]->Id;
+		}
+		
+		// couldn't find the PaymentMethod so we'll create one
+		$ia_payment_method->Name = $name;
+		$ia_payment_method->save();
+		$this->_qb_payment_methods[$name] = $ia_payment_method;
+		return $this->_qb_payment_methods[$name]->Id;
 	}
 	
 	protected function _getQBCustomerNamed($name)
@@ -580,9 +648,26 @@ class Sync_MerchantOStoQuickBooks {
 		{
 			return $this->_qb_customers[$name]->Id;
 		}
-		/**
-		 * @todo rest of this
-		 */
+		
+		require_once("IntuitAnywhere/Customer.class.php");
+		$ia_customer = new IntuitAnywhere_Customer($ianywhere);
+		
+		// search for an existing customer
+		$filters = array('Name'=>$name);
+		
+		$customers = $ia_customer->listAll($filters,1);
+		
+		if (count($customers)==1)
+		{
+			$this->_qb_customers[$name] = $customers[0];
+			return $this->_qb_customers[$name]->Id;
+		}
+		
+		// couldn't find the customer so we'll create one
+		$ia_customer->Name = $name;
+		$ia_customer->save();
+		$this->_qb_customers[$name] = $ia_customer;
+		return $this->_qb_customers[$name]->Id;
 	}
 	
 	protected function _getQBClassNamed($name)
@@ -591,21 +676,63 @@ class Sync_MerchantOStoQuickBooks {
 		{
 			return $this->_qb_classes[$name]->Id;
 		}
-		/**
-		 * @todo rest of this
-		 */
+		
+		require_once("IntuitAnywhere/Class.class.php");
+		$ia_class = new IntuitAnywhere_Class($ianywhere);
+		
+		// search for an existing class
+		$filters = array('Name'=>$name);
+		
+		$classes = $ia_class->listAll($filters,1);
+		
+		if (count($classes)==1)
+		{
+			$this->_qb_classes[$name] = $classes[0];
+			return $this->_qb_classes[$name]->Id;
+		}
+		
+		// couldn't find the class so we'll create one
+		$ia_class->Name = $name;
+		$ia_class->save();
+		$this->_qb_classes[$name] = $ia_class;
+		return $this->_qb_classes[$name]->Id;
 	}
 	
-	protected function _getQBAccountNamed($name,$parent_account_id)
+	protected function _getQBAccountNamed($name,$parent_account_id=null)
 	{
 		$cache_index = $name . $parent_account_id;
 		if (isset($this->_qb_accounts[$cache_index]))
 		{
 			return $this->_qb_accounts[$cache_index]->Id;
 		}
-		/**
-		 * @todo rest of this
-		 */
+		
+		require_once("IntuitAnywhere/Account.class.php");
+		$ia_account = new IntuitAnywhere_Account($ianywhere);
+		
+		// search for an existing account
+		$filters = array('Name'=>$name);
+		if (isset($parent_account_id))
+		{
+			$filters['AccountParentId'] = $parent_account_id;
+		}
+		
+		$accounts = $ia_account->listAll($filters,1);
+		
+		if (count($accounts)==1)
+		{
+			$this->_qb_accounts[$name] = $accounts[0];
+			return $this->_qb_accounts[$name]->Id;
+		}
+		
+		// couldn't find the account so we'll create one
+		$ia_account->Name = $name;
+		if (isset($parent_account_id))
+		{
+			$ia_account->AccountParentId = $parent_account_id;
+		}
+		$ia_account->save();
+		$this->_qb_accounts[$name] = $ia_account;
+		return $this->_qb_accounts[$name]->Id;
 	}
 	
 	protected function _getQBVendorNamed($name)
