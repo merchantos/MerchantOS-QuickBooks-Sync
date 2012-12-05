@@ -16,6 +16,10 @@ require_once("IntuitAnywhere/IntuitAnywhere.class.php");
 
 require_once("MerchantOS/Option.class.php");
 require_once("MerchantOS/Accounting.class.php");
+require_once("MerchantOS/Shop.class.php");
+
+require_once("Sync/MerchantOStoQuickBooks.class.php");
+
 
 function returnOutput($output)
 {
@@ -98,11 +102,10 @@ if (mosqb_database::hasSyncSuccessDurring($login_sess_access->account_id,$start_
 	exit;
 }
 
-require_once("Sync/MerchantOStoQuickBooks.class.php");
-
 $mos_accounting = new MerchantOS_Accounting($merchantos_sess_access->api_key,$merchantos_sess_access->api_account);
+$mos_shop = new MerchantOS_Shop($merchantos_sess_access->api_key,$merchantos_sess_access->api_account);
 
-$mosqb_sync = new Sync_MerchantOStoQuickBooks($mos_accounting,$ianywhere);
+$mosqb_sync = new Sync_MerchantOStoQuickBooks($mos_accounting,$mos_shop,$ianywhere);
 
 // shops to sync
 foreach ($setup_sess_access->setup_shops as $shopID=>$onoff)
@@ -128,7 +131,7 @@ $mosqb_sync->setAccountMapping(array(
 	"gift_cards"=>$setup_sess_access->gift_cards,
 	"cogs"=>$setup_sess_access->cogs,
 	"inventory"=>$setup_sess_access->inventory,
-	"orders"=>$setup_sess_access->inventory,
+	//"orders"=>$setup_sess_access->inventory,
 	"orders_shipping"=>$setup_sess_access->orders_shipping,
 	"orders_other"=>$setup_sess_access->orders_other
 ));
