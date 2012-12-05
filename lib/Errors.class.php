@@ -180,10 +180,16 @@ class helpers_Errors
 	
 	protected function _isJSON()
 	{
-		$headers = headers_list();
-		if (array_search("Content-Type: application/json",$headers)!==false)
+		$headers = getallheaders();
+		foreach ($headers as $key=>$value)
 		{
-			return true;
+			if ($key == "Accept" || $key == "Content-Type")
+			{
+				if (stripos($value,"application/json")!==false)
+				{
+					return true;
+				}
+			}
 		}
 		return false;
 	}
