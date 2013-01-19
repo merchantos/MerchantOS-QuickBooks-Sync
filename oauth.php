@@ -19,7 +19,7 @@ $user = $ianywhere->getCurrentUser();
 
 $qb_sess_access->CurrentUser = $user;
 
-// we're all do so save this to the db
+// we're all done so save this to the db
 $oauth_array = $oauth_sess_access->getArray();
 $qb_array = $qb_sess_access->getArray();
 

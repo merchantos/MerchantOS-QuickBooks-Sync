@@ -75,6 +75,21 @@ xmlns:ns3="http://www.intuit.com/sb/cdm/qbo">
 		throw new Exception("Payment::load from QBD XML, not implemented.");
 	}
 	
+	protected function _getXMLForQBDDelete()
+	{
+		throw new Exception("Payment::get XML for QBD delete, not implemented.");
+	}
+	
+	protected function _getXMLForQBODelete()
+	{
+		$xml = '<?xml version="1.0" encoding="utf-8"?>
+		<Payment xmlns:ns2="http://www.intuit.com/sb/cdm/qbo" xmlns="http://www.intuit.com/sb/cdm/v2">';
+		$xml .= "<Id>" . $this->Id . "</Id>";
+		$xml .= "<SyncToken>" . $this->SyncToken . "</SyncToken>";
+		$xml .= '</Payment>';
+		return $xml;
+	}
+	
 	protected function _getXMLForQBO()
 	{
 		/*
@@ -119,7 +134,7 @@ xmlns:ns3="http://www.intuit.com/sb/cdm/qbo">
 		}
 		if (isset($this->HeaderNote))
 		{
-			$header_xml .= "<Note>" . $this->HeaderNote . "</Note>";
+			$header_xml .= "<Note>" . htmlentities($this->HeaderNote) . "</Note>";
 		}
 		if (isset($this->HeaderDepositToAccountId))
 		{

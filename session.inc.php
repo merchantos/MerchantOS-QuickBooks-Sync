@@ -2,6 +2,10 @@
 
 // initialize the session and handle any session related get params
 
+// we are using memcache to store our sessions
+require_once("lib/MemcacheSession.class.php");
+MemcacheSession::Init(60); // this registers the sesion handlers, 60 = minutes till session expire
+
 if (!isset($_REQUEST[session_name()]))
 {
 	if (isset($_GET['key']))

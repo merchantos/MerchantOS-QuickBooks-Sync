@@ -35,6 +35,21 @@ class IntuitAnywhere_PaymentMethod extends IntuitAnywhere_DataModel
 		throw new Exception("PaymentMethod::load from QBD XML, not implemented.");
 	}
 	
+	protected function _getXMLForQBDDelete()
+	{
+		throw new Exception("PaymentMethod::get XML for QBD delete, not implemented.");
+	}
+	
+	protected function _getXMLForQBODelete()
+	{
+		$xml = '<?xml version="1.0" encoding="utf-8"?>
+		<PaymentMethod xmlns:ns2="http://www.intuit.com/sb/cdm/qbo" xmlns="http://www.intuit.com/sb/cdm/v2">';
+		$xml .= "<Id>" . $this->Id . "</Id>";
+		$xml .= "<SyncToken>" . $this->SyncToken . "</SyncToken>";
+		$xml .= '</PaymentMethod>';
+		return $xml;
+	}
+	
 	protected function _getXMLForQBO()
 	{
 		/*
@@ -54,7 +69,7 @@ class IntuitAnywhere_PaymentMethod extends IntuitAnywhere_DataModel
 		$xml = "";
 		
 		// required
-		$xml .= "<Name>" . $this->Name . "</Name>";
+		$xml .= "<Name>" . htmlentities($this->Name) . "</Name>";
 		$xml .= "<Type>" . $this->Type . "</Type>";
 		
 		return <<<PAYMENTQBOCREATE

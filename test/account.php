@@ -107,4 +107,30 @@ if ($sub_accounts[0]->Id != $ia_subaccount->Id)
 	var_dump("Should have been equal.");
 }
 
+// delete as fresh object to test loading
+// first the sub account
+$ia_to_delete = new IntuitAnywhere_Account($ianywhere);
+$ia_to_delete->Id = $ia_subaccount->Id;
+$ia_to_delete->delete();
+
+// then the parent account
+$ia_to_delete = new IntuitAnywhere_Account($ianywhere);
+$ia_to_delete->Id = $ia_account->Id;
+$ia_to_delete->delete();
+
+// make sure they were deleted
+$sub_accounts = $ia_account->listAll($sub_filters);
+$accounts = $ia_account->listAll($filters);
+
+if (count($sub_accounts)!=0)
+{
+	var_dump($sub_accounts);
+	var_dump("Deleted account still existed.");
+}
+if (count($accounts)!=0)
+{
+	var_dump($accounts);
+	var_dump("Deleted account still existed.");
+}
+
 echo "Done.";

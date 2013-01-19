@@ -31,14 +31,24 @@ class IntuitAnywhere_BillLine extends IntuitAnywhere_DataModel
 		throw new Exception("BillLine::load from QBD XML, not implemented.");
 	}
 	
+	protected function _getXMLForQBDDelete()
+	{
+		throw new Exception("BillLine::Can not be deleted individually.");
+	}
+	
+	protected function _getXMLForQBODelete()
+	{
+		throw new Exception("BillLine::Can not be deleted individually.");
+	}
+	
 	public function getXMLForQBO()
 	{
 		return $this->_getXMLForQBO();
 	}
 	protected function _getXMLForQBO()
 	{
-		$desc = $this->Desc;
-		$amount = number_format(round($this->Amount,2),2);
+		$desc = htmlentities($this->Desc);
+		$amount = $this->Amount;
 		$classid = $this->ClassId;
 		$accountid = $this->AccountId;
 		return <<<BILLLINEQBO
@@ -130,6 +140,21 @@ class IntuitAnywhere_Bill extends IntuitAnywhere_DataModel
 		throw new Exception("Bill::load from QBD XML, not implemented.");
 	}
 	
+	protected function _getXMLForQBDDelete()
+	{
+		throw new Exception("Bill::get XML for QBD delete, not implemented.");
+	}
+	
+	protected function _getXMLForQBODelete()
+	{
+		$xml = '<?xml version="1.0" encoding="utf-8"?>
+		<Bill xmlns:ns2="http://www.intuit.com/sb/cdm/qbo" xmlns="http://www.intuit.com/sb/cdm/v2">';
+		$xml .= "<Id>" . $this->Id . "</Id>";
+		$xml .= "<SyncToken>" . $this->SyncToken . "</SyncToken>";
+		$xml .= '</Bill>';
+		return $xml;
+	}
+	
 	protected function _getXMLForQBO()
 	{
 		/*
@@ -166,7 +191,7 @@ class IntuitAnywhere_Bill extends IntuitAnywhere_DataModel
 			$lines .= $billline->getXMLForQBO();
 		}
 		$txndate = $this->HeaderTxnDate->format('Y-m-d-H:i:s');
-		$msg = $this->HeaderMsg;
+		$msg = htmlentities($this->HeaderMsg);
 		$vendorid = $this->HeaderVendorId;
 		$docnum = "";
 		if (isset($this->HeaderDocNumber))

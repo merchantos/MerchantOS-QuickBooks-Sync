@@ -18,6 +18,70 @@ mosqb = {
 			$('#welcome').show();
 		}
 	},
+	objects:{
+		init: function() {
+			// see if we should redirect back to MOS
+			var return_url = mosqb.getParameterByName('return_url');
+			var return_on_setup = mosqb.getParameterByName('return_on_setup');
+			if (return_url && return_on_setup) {
+				window.location = return_url;
+			}
+			
+			mosqb.objects.loadObjects().done(function(data) {
+				$('#loading').hide();
+				$('#objects').show();
+			});
+		},
+		loadObjects: function(page) {
+			var selector = "#objects dl.objects";
+			if (!page) page = 1;
+			return $.getJSON("./jsonapi/LoadObjects.json.php?page="+page).success(function (data) {
+				var parent_dl = $(selector);
+				parent_dl.children().remove();
+				if (data.objects && data.objects.length > 0) {
+					$.each(data.objects,function(i,value) {
+						parent_dl.append("<dd>" + value['type'] + " (" + value['id'] + ") <a href='#delete-object' object_id='"+value['id']+"' object_type='"+value['type']+"'>Delete</a></dd>");
+					});
+				} else {
+					parent_dl.append("<dd>No Objects</dd>");
+				}
+				var next = $("<a href='#next'>Next &raquo;</a>");
+				next.click(function () {
+					mosqb.objects.loadObjects(page+1);
+				});
+				var previous = $("<a href='#next'>&laquo; Previous</a>");
+				previous.click(function () {
+					mosqb.objects.loadObjects(page-1);
+				});
+				if (data.page > 1) {
+					$("#objects dl.objects").append(previous);
+					if (data.count == 16) {
+						parent_dl.append(" ").append(next);
+					}
+				} else if (data.count == 16) {
+					parent_dl.append(next);
+				}
+				if (data.error) {
+					mosqb.error(data.error);
+				}
+			});
+		},
+		deleteObject: function(href) {
+			var object_id = $(href).attr("object_id");
+			var object_type = $(href).attr("object_type");
+			if ($(href).parent().parent().find("dt").length == 1) {
+				//      dd       dl       div
+				$(href).parent().parent().parent().hide();
+			}
+			$(href).parent().prev().remove();
+			$(href).parent().remove();
+			$.getJSON("./jsonapi/DeleteObject.json.php?id="+object_id+"&type="+object_type).success(function (data) {
+				if (data.error) {
+					mosqb.error(data.error);
+				}
+			});
+		}
+	},
 	dashboard:{
 		init: function() {
 			// see if we should redirect back to MOS
@@ -32,7 +96,7 @@ mosqb = {
 				$('#dashboard').show();
 			});
 		},
-		syncNow: function (date,account_log_id) {
+		syncNow: function (date,account_log_id,type) {
 			var query = "";
 			if (date) {
 				query = "?date=" + date;
@@ -40,6 +104,12 @@ mosqb = {
 				{
 					query += "&resync_account_log_id=" + account_log_id;
 				}
+				if (type)
+				{
+					query += "&type=" + type;
+				}
+			} else if (type) {
+				query = "?type=" + type;
 			}
 			return $.getJSON("./jsonapi/SyncNow.json.php" + query).done(function (result) {
 				if (result.success) {
@@ -75,7 +145,7 @@ mosqb = {
 			return $.getJSON("./jsonapi/LoadLog.json.php?page="+page+"&alerts="+alerts).success(function (data) {
 				var parent_dl = $(selector);
 				parent_dl.children().remove();
-				if (data.log.length > 0) {
+				if (data.log && data.log.length > 0) {
 					if (alerts==1) {
 						parent_dl.parent().show();
 					}
@@ -87,7 +157,7 @@ mosqb = {
 						if (value['success']) {
 							parent_dl.append("<dt>" + value['date'] + "</dt><dd>" + value['msg'] + dismiss + "</dd>");
 						} else {
-							parent_dl.append("<dt>" + value['date'] + "</dt><dd>" + value['msg'] + " <a href='#re-sync-day' rday='"+ value['date'] +"' account_log_id='" + value['account_log_id'] + "'>Re-Sync</a>" + dismiss +"</dd>");
+							parent_dl.append("<dt>" + value['date'] + "</dt><dd>" + value['msg'] + " <a href='#re-sync-day' rday='"+ value['date'] +"' rtype='" + value['type'] + "' account_log_id='" + value['account_log_id'] + "'>Re-Sync</a>" + dismiss +"</dd>");
 						}
 					});
 				} else if (alerts==0) {
@@ -331,6 +401,10 @@ $(document).ready(function() {
 		mosqb.sections.activate('settings');
 	});
 	
+	$("a[href='#objects']").click(function() {
+		mosqb.sections.activate('objects');
+	});
+	
 	var syncing = false;
 	
 	$("a[href='#syncnow']").click(function () {
@@ -346,10 +420,11 @@ $(document).ready(function() {
 	
 	$("a[href='#re-sync-day']").live("click",function () {
 		var date = $(this).attr("rday");
+		var type = $(this).attr("rtype");
 		var account_log_id = $(this).attr("account_log_id");
 		var button = $("a[href='#syncnow']");
 		button.html("Syncing...");
-		mosqb.dashboard.syncNow(date,account_log_id).done(function (data) {
+		mosqb.dashboard.syncNow(date,account_log_id,type).done(function (data) {
 			button.html("Sync Now");
 			syncing = false;
 		});
@@ -357,6 +432,10 @@ $(document).ready(function() {
 	
 	$("a[href='#dismiss-alert']").live("click",function () {
 		mosqb.dashboard.dismissAlert(this);
+	});
+	
+	$("a[href='#delete-object']").live("click",function () {
+		mosqb.objects.deleteObject(this);
 	});
 	
 	$("#errors button").click(function () {

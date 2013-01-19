@@ -21,6 +21,14 @@ class IntuitAnywhere_EntityComponent extends IntuitAnywhere_DataModel
 	{
 		throw new Exception(get_class($this) . "::load from QBO XML, not implemented.");
 	}
+	protected function _getXMLForQBDDelete()
+	{
+		throw new Exception("EntityComponent::Can not be deleted individually.");
+	}
+	protected function _getXMLForQBODelete()
+	{
+		throw new Exception("EntityComponent::Can not be deleted individually.");
+	}
 	public function getXMLForQBO()
 	{
 		return $this->_getXMLForQBO();
@@ -92,31 +100,27 @@ class IntuitAnywhere_EntityAddress extends IntuitAnywhere_EntityComponent
 		$xml = "<Address>";
 		if (isset($this->Line1))
 		{
-			$xml .= '<Line1>' . $this->Line1 . '</Line1>';
+			$xml .= '<Line1>' . htmlentities($this->Line1) . '</Line1>';
 		}
 		if (isset($this->Line2))
 		{
-			$xml .= '<Line2>' . $this->Line2 . '</Line2>';
+			$xml .= '<Line2>' . htmlentities($this->Line2) . '</Line2>';
 		}
 		if (isset($this->Line3))
 		{
-			$xml .= '<Line3>' . $this->Line3 . '</Line3>';
+			$xml .= '<Line3>' . htmlentities($this->Line3) . '</Line3>';
 		}
 		if (isset($this->Line4))
 		{
-			$xml .= '<Line4>' . $this->Line4 . '</Line4>';
+			$xml .= '<Line4>' . htmlentities($this->Line4) . '</Line4>';
 		}
 		if (isset($this->Line5))
 		{
-			$xml .= '<Line5>' . $this->Line5 . '</Line5>';
-		}
-		if (isset($this->Line5))
-		{
-			$xml .= '<Line5>' . $this->Line5 . '</Line5>';
+			$xml .= '<Line5>' . htmlentities($this->Line5) . '</Line5>';
 		}
 		if (isset($this->City))
 		{
-			$xml .= '<City>' . $this->City . '</City>';
+			$xml .= '<City>' . htmlentities($this->City) . '</City>';
 		}
 		if (isset($this->CountrySubDivisionCode))
 		{
@@ -128,7 +132,7 @@ class IntuitAnywhere_EntityAddress extends IntuitAnywhere_EntityComponent
 		}
 		if (isset($this->Tag))
 		{
-			$xml .= '<Tag>' . $this->Tag . '</Tag>';
+			$xml .= '<Tag>' . htmlentities($this->Tag) . '</Tag>';
 		}
 		$xml .= "</Address>";
 		return $xml;
@@ -146,7 +150,7 @@ class IntuitAnywhere_EntityWebSite extends IntuitAnywhere_EntityComponent
 	
 	protected function _getXMLForQBO()
 	{
-		return "<WebSite><URI>" . $this->URI . "</URI></WebSite>";
+		return "<WebSite><URI>" . htmlentities($this->URI) . "</URI></WebSite>";
 	}
 }
 
@@ -161,7 +165,7 @@ class IntuitAnywhere_EntityEmail extends IntuitAnywhere_EntityComponent
 	
 	protected function _getXMLForQBO()
 	{
-		return "<Email><Address>" . $this->Address . "</Address></Email>";
+		return "<Email><Address>" . htmlentities($this->Address) . "</Address></Email>";
 	}
 }
 
@@ -276,6 +280,14 @@ abstract class IntuitAnywhere_EntityBase extends IntuitAnywhere_DataModel
 		throw new Exception(get_class($this) . "::load from QBD XML, not implemented.");
 	}
 	
+	protected function _getXMLForQBDDelete()
+	{
+		throw new Exception("EntityBase::Can not delete because subclass (" . get_class($this) . ") does not define the delete method.");
+	}
+	protected function _getXMLForQBODelete()
+	{
+		throw new Exception("EntityBase::Can not delete because subclass (" . get_class($this) . ") does not define the delete method.");
+	}
 	/**
 	 * When you extend this you need to add the XMl wrapper information:
 	 * 
@@ -327,23 +339,23 @@ abstract class IntuitAnywhere_EntityBase extends IntuitAnywhere_DataModel
 		}
 		if (isset($this->Name))
 		{
-			$xml .= "<Name>" . $this->Name . "</Name>";
+			$xml .= "<Name>" . htmlentities($this->Name) . "</Name>";
 		}
 		if (isset($this->GiveName))
 		{
-			$xml .= "<GiveName>" . $this->GiveName . "</GiveName>";
+			$xml .= "<GiveName>" . htmlentities($this->GiveName) . "</GiveName>";
 		}
 		if (isset($this->MiddleName))
 		{
-			$xml .= "<MiddleName>" . $this->MiddleName . "</MiddleName>";
+			$xml .= "<MiddleName>" . htmlentities($this->MiddleName) . "</MiddleName>";
 		}
 		if (isset($this->FamilyName))
 		{
-			$xml .= "<FamilyName>" . $this->FamilyName . "</FamilyName>";
+			$xml .= "<FamilyName>" . htmlentities($this->FamilyName) . "</FamilyName>";
 		}
 		if (isset($this->Suffix))
 		{
-			$xml .= "<Suffix>" . $this->Suffix . "</Suffix>";
+			$xml .= "<Suffix>" . htmlentities($this->Suffix) . "</Suffix>";
 		}
 		if (isset($this->TaxIdentifier))
 		{
@@ -351,7 +363,7 @@ abstract class IntuitAnywhere_EntityBase extends IntuitAnywhere_DataModel
 		}
 		if (isset($this->ShowAs))
 		{
-			$xml .= "<ShowAs>" . $this->ShowAs . "</ShowAs>";
+			$xml .= "<ShowAs>" . htmlentities($this->ShowAs) . "</ShowAs>";
 		}
 		
 		if (isset($this->SalesTermId))

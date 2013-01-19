@@ -334,7 +334,7 @@ class IntuitAnywhere
 		}
 		if (!isset($this->store->realmId))
 		{
-			throw new Exception("BaseURI must be set to construct a query URL.");
+			throw new Exception("realmId must be set to construct a query URL.");
 		}
 		
 		$idDomain = null;
@@ -350,10 +350,10 @@ class IntuitAnywhere
 		}
 		
 		$url = $this->store->BaseURI . $resource . $objectName . "/v2/" . $this->store->realmId;
-		if ($objectID && $idDomain)
+		if ($objectID)
 		{
 			$url .= "/" . $objectID;
-			if ($this->isQBD())
+			if ($this->isQBD() && $idDomain)
 			{
 				$url .= "?idDomain=" . $idDomain;
 			}
@@ -400,13 +400,27 @@ class IntuitAnywhere
 		$request = new OAuthRequester($this->_getQueryURL($objectName,$objectID),$method,$params,$body);
 		$result = $request->doRequest(0,$curl_opt);
 		
-		if ($result['code'] != 200)
+		if ($result['code'] == 200)
 		{
-			$this->_handleError($result,"Query for $objectName failed.");
-			return false;
+			return $result['body'];
 		}
 		
-		return $result['body'];
+		// check to see if they sent us a redirect, not sure why they do this
+		if ($result['code'] == 302)
+		{
+			if ($result['headers']['location'])
+			{
+				$request = new OAuthRequester($result['headers']['location'],$method,$params,$body);
+				$result = $request->doRequest(0,$curl_opt);
+				if ($result['code']==200)
+				{
+					return $result['body'];
+				}
+			}
+		}
+
+		$this->_handleError($result,"Query for $objectName failed.");
+		return false;
 	}
 	
 	/**

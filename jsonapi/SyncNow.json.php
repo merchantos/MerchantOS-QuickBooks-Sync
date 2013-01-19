@@ -43,7 +43,7 @@ if (isset($options['cost_method']) && $options['cost_method']!="average")
 }
 
 $send_sales = $setup_sess_access->send_sales;
-if ($send_sales == "on" || $send_sales == "On" || $send_sales->send_sales)
+if ($send_sales == "on" || $send_sales == "On")
 {
 	$send_sales = true;
 }
@@ -53,7 +53,7 @@ else
 }
 
 $send_inventory = $setup_sess_access->send_inventory;
-if ($send_inventory == "on" || $send_inventory == "On" || $send_inventory->send_sales)
+if ($send_inventory == "on" || $send_inventory == "On")
 {
 	$send_inventory = true;
 }
@@ -63,7 +63,7 @@ else
 }
 
 $send_orders = $setup_sess_access->send_orders;
-if ($send_orders == "on" || $send_orders == "On" || $send_orders->send_sales)
+if ($send_orders == "on" || $send_orders == "On")
 {
 	$send_orders = true;
 }
@@ -72,34 +72,10 @@ else
 	$send_orders = false;
 }
 
-$start_date = new DateTime($setup_sess_access->start_date);
-
-// we need to get the last date synced and if start_date is <= then set it to that plus 1 day
-$last_success_date = mosqb_database::getLastSuccessfulDataDate($login_sess_access->account_id);
-if ($last_success_date)
+$type = "all";
+if (isset($_GET['type']))
 {
-	$start_date = new DateTime($last_success_date->format('c') . ' + 1 day');
-}
-
-// data delay is an offset from todays date that DateTime knows how to translate
-$end_date = new DateTime($setup_sess_access->data_delay);
-
-if (isset($_GET['date'])) {
-	$one_date = new DateTime($_GET['date']);
-	if ($one_date > $end_date)
-	{
-		// we can't process a date this recent, it's against our data delay setting
-		echo returnOutput("{\"error\":\"Sync date is beyond your data delay setting.\"}");
-		exit;
-	}
-	$start_date = $one_date;
-	$end_date = $one_date;
-}
-
-if (mosqb_database::hasSyncSuccessDurring($login_sess_access->account_id,$start_date,$end_date))
-{
-	echo returnOutput("{\"error\":\"Sync date is beyond your data delay setting.\"}");
-	exit;
+	$type = $_GET['type'];
 }
 
 $mos_accounting = new MerchantOS_Accounting($merchantos_sess_access->api_key,$merchantos_sess_access->api_account);
@@ -141,38 +117,146 @@ if (!$average_costing)
 	$mosqb_sync->setFIFOCosting();
 }
 
-if (!$send_sales)
+if (!$send_sales || ($type!='all' && $type!='sales'))
 {
+	$send_sales = false;
 	$mosqb_sync->setNoSales();
 }
 
-if (!$send_inventory)
+if (!$send_inventory || ($type!='all' && $type!='cogs'))
 {
+	$send_inventory = false;
 	$mosqb_sync->setNoCOGS();
 }
 
-if (!$send_orders)
+if (!$send_orders || ($type!='all' && $type!='orders'))
 {
+	$send_orders = false;
 	$mosqb_sync->setNoOrders();
 }
 
-try
+// check sync settings
+if (!$mosqb_sync->checkSyncSettings())
 {
-	$log = $mosqb_sync->sync($start_date,$end_date);
-}
-catch (Exception $e)
-{
-	$log = array(array("msg"=>"Error: " . $e->getMessages(),"success"=>false,"alert"=>true));
+	// we can't process a date this recent, it's against our data delay setting
+	echo returnOutput("{\"error\":\"QuickBooks or MerchantOS settings have changed, you need to check your SyncSettings.\"}");
+	exit;
 }
 
-if (count($log)>0)
+// sync sales
+if ($send_sales || $send_inventory)
 {
-	if (isset($_GET['resync_account_log_id']))
+	$log_test_type = "sales";
+	if ($type == 'cogs')
 	{
-		// delete the log entries for the previous sync of this day if we are doing a resync
-		mosqb_database::deleteAccountLogEntry($login_sess_access->account_id,$_GET['resync_account_log_id']);
+		$log_test_type = "cogs";
 	}
-	mosqb_database::writeAccountLogEntries($login_sess_access->account_id,$log);
+	
+	$sales_start_date = new DateTime($setup_sess_access->start_date);
+	
+	// we need to get the last date synced and if start_date is <= then set it to that plus 1 day
+	$last_success_date = mosqb_database::getLastSuccessfulDataDate($log_test_type,$login_sess_access->account_id);
+	if ($last_success_date)
+	{
+		$sales_start_date = new DateTime($last_success_date->format('c') . ' + 1 day');
+	}
+	
+	// data delay is an offset from todays date that DateTime knows how to translate
+	$sales_end_date = new DateTime($setup_sess_access->data_delay);
+	
+	if (isset($_GET['date'])) {
+		$one_date = new DateTime($_GET['date']);
+		if ($one_date > $sales_end_date)
+		{
+			// we can't process a date this recent, it's against our data delay setting
+			echo returnOutput("{\"error\":\"Sync date is beyond your data delay setting.\"}");
+			exit;
+		}
+		$sales_start_date = $one_date;
+		$sales_end_date = $one_date;
+	}
+	
+	if (mosqb_database::hasSyncSuccessDurring($log_test_type,$login_sess_access->account_id,$sales_start_date,$sales_end_date))
+	{
+		echo returnOutput("{\"error\":\"Date range has already been synced.\"}");
+		exit;
+	}
+	
+	try
+	{
+		$sales_log = $mosqb_sync->syncSales($sales_start_date,$sales_end_date);
+	}
+	catch (Exception $e)
+	{
+		$sales_log = array(array("msg"=>"Error: " . $e->getMessage() . " Line: " . $e->getLine() . " File: " . $e->getFile(),"success"=>false,"alert"=>true,"type"=>"msg"));
+	}
+	
+	if (count($sales_log)>0)
+	{
+		if (isset($_GET['resync_account_log_id']))
+		{
+			// delete the log entries for the previous sync of this day if we are doing a resync
+			mosqb_database::deleteAccountLogEntry($login_sess_access->account_id,$_GET['resync_account_log_id']);
+		}
+		mosqb_database::writeAccountLogEntries($login_sess_access->account_id,$sales_log);
+	}
 }
+
+
+// sync orders
+if ($send_orders)
+{
+	$orders_start_date = new DateTime($setup_sess_access->start_date);
+	
+	// we need to get the last date synced and if start_date is <= then set it to that plus 1 day
+	$last_success_date = mosqb_database::getLastSuccessfulDataDate('orders',$login_sess_access->account_id);
+	if ($last_success_date)
+	{
+		$orders_start_date = new DateTime($last_success_date->format('c') . ' + 1 day');
+	}
+	
+	// data delay is an offset from todays date that DateTime knows how to translate
+	$orders_end_date = new DateTime($setup_sess_access->data_delay);
+	
+	if (isset($_GET['date'])) {
+		$one_date = new DateTime($_GET['date']);
+		if ($one_date > $orders_end_date)
+		{
+			// we can't process a date this recent, it's against our data delay setting
+			echo returnOutput("{\"error\":\"Sync date is beyond your data delay setting.\"}");
+			exit;
+		}
+		$orders_start_date = $one_date;
+		$orders_end_date = $one_date;
+	}
+	
+	if (mosqb_database::hasSyncSuccessDurring('orders',$login_sess_access->account_id,$orders_start_date,$orders_end_date))
+	{
+		echo returnOutput("{\"error\":\"Date range has already been synced.\"}");
+		exit;
+	}
+	
+	try
+	{
+		$orders_log = $mosqb_sync->syncOrders($orders_start_date,$orders_end_date);
+	}
+	catch (Exception $e)
+	{
+		$orders_log = array(array("msg"=>"Error: " . $e->getMessage() . " Line: " . $e->getLine() . " File: " . $e->getFile(),"success"=>false,"alert"=>true,"type"=>"msg"));
+	}
+	
+	if (count($orders_log)>0)
+	{
+		if (isset($_GET['resync_account_log_id']))
+		{
+			// delete the log entries for the previous sync of this day if we are doing a resync
+			mosqb_database::deleteAccountLogEntry($login_sess_access->account_id,$_GET['resync_account_log_id']);
+		}
+		mosqb_database::writeAccountLogEntries($login_sess_access->account_id,$orders_log);
+	}
+}
+
+// record all the objects that got created, useful because we might change how things are synced in future, also we might want to do do something like add a way to delete stuff that was created to clean up a bad sync etc
+mosqb_database::writeQBObjects($login_sess_access->account_id,$mosqb_sync->getObjectsWritten());
 
 echo returnOutput("{\"success\":true}");

@@ -36,6 +36,6 @@ class MerchantOS_Accounting
 	
 	public function getOrdersByTaxClass($start,$end)
 	{
-		return $this->_mosapi->makeAPICall("Account.Reports.Accounting.OrdersByTaxClass","Read",null,null,"xml","startDate=$start_date&endDate=$end_date");
+		return $this->_mosapi->makeAPICall("Account.Reports.Accounting.OrdersByTaxClass","Read",null,null,"xml","startDate=$start&endDate=$end");
 	}
 }

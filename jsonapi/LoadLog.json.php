@@ -33,7 +33,13 @@ if (isset($_GET['alerts']) && $_GET['alerts']==1)
 	$alerts = true;
 }
 
-$log_msgs = mosqb_database::readAccountLog($login_sess_access->account_id,$offset,$limit,$alerts);
+$type = 'all';
+if (isset($_GET['type']))
+{
+	$TYPE = $_GET['type'];
+}
+
+$log_msgs = mosqb_database::readAccountLog($type,$login_sess_access->account_id,$offset,$limit,$alerts);
 if (!$log_msgs)
 {
 	$log_msgs = array();
@@ -45,12 +51,13 @@ foreach ($log_msgs as $insert_time=>$log_msg)
 	$account_log_id_json = "\"".$log_msg['account_log_id']."\"";
 	$date_json = "\"".$log_msg['data_date']."\"";
 	$msg_json = "\"".$log_msg['msg']."\"";
+	$type_json = "\"".$log_msg['type']."\"";
 	$success = "false";
 	if ($log_msg['success']) {
 		$success = "true";
 	}
 	$insert_time = $log_msg['insert_time'];
-	$log_json[] = "{\"date\":$date_json,\"msg\":$msg_json,\"success\":$success,\"insert_time\":$insert_time,\"account_log_id\":$account_log_id_json}";
+	$log_json[] = "{\"date\":$date_json,\"msg\":$msg_json,\"success\":$success,\"insert_time\":$insert_time,\"account_log_id\":$account_log_id_json,\"type\":$type_json}";
 }
 
 $count = count($log_json);

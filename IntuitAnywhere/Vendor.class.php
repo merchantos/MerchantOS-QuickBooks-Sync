@@ -20,6 +20,21 @@ class IntuitAnywhere_Vendor extends IntuitAnywhere_EntityBase
 		$this->Vendor1099 = (string)$xml->Vendor1099;
 	}
 	
+	protected function _getXMLForQBDDelete()
+	{
+		throw new Exception("Vendor::get XML for QBD delete, not implemented.");
+	}
+	
+	protected function _getXMLForQBODelete()
+	{
+		$xml = '<?xml version="1.0" encoding="utf-8"?>
+		<Vendor xmlns:ns2="http://www.intuit.com/sb/cdm/qbo" xmlns="http://www.intuit.com/sb/cdm/v2">';
+		$xml .= "<Id>" . $this->Id . "</Id>";
+		$xml .= "<SyncToken>" . $this->SyncToken . "</SyncToken>";
+		$xml .= '</Vendor>';
+		return $xml;
+	}
+	
 	protected function _getXMLForQBO()
 	{
 		if ($this->Id>0)

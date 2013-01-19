@@ -36,13 +36,23 @@ class IntuitAnywhere_JournalEntryLine extends IntuitAnywhere_DataModel
 		throw new Exception("JournalEntryLine::load from QBD XML, not implemented.");
 	}
 	
+	protected function _getXMLForQBDDelete()
+	{
+		throw new Exception("JournalEntryLine::Can not be deleted individually.");
+	}
+	
+	protected function _getXMLForQBODelete()
+	{
+		throw new Exception("JournalEntryLine::Can not be deleted individually.");
+	}
+	
 	public function getXMLForQBO()
 	{
 		return $this->_getXMLForQBO();
 	}
 	protected function _getXMLForQBO()
 	{
-		$desc = $this->Desc;
+		$desc = htmlentities($this->Desc);
 		$amount = $this->Amount;
 		$postingtype = $this->PostingType;
 		$accountid = $this->AccountId;
@@ -115,6 +125,21 @@ class IntuitAnywhere_JournalEntry extends IntuitAnywhere_DataModel
 		throw new Exception("JournalEntry::load from QBD XML, not implemented.");
 	}
 	
+	protected function _getXMLForQBDDelete()
+	{
+		throw new Exception("Customer::get XML for QBD delete, not implemented.");
+	}
+	
+	protected function _getXMLForQBODelete()
+	{
+		$xml = '<?xml version="1.0" encoding="utf-8"?>
+		<JournalEntry xmlns:ns2="http://www.intuit.com/sb/cdm/qbo" xmlns="http://www.intuit.com/sb/cdm/v2">';
+		$xml .= "<Id>" . $this->Id . "</Id>";
+		$xml .= "<SyncToken>" . $this->SyncToken . "</SyncToken>";
+		$xml .= '</JournalEntry>';
+		return $xml;
+	}
+	
 	protected function _getXMLForQBO()
 	{
 		if ($this->Id>0)
@@ -127,7 +152,7 @@ class IntuitAnywhere_JournalEntry extends IntuitAnywhere_DataModel
 			$lines .= $jeline->getXMLForQBO();
 		}
 		$txndate = $this->HeaderTxnDate->format('Y-m-d-H:i:s');
-		$note = $this->HeaderNote;
+		$note = htmlentities($this->HeaderNote);
 		$adjustment = $this->HeaderAdjustment;
 		return <<<JOURNALENTRYQBOCREATE
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>

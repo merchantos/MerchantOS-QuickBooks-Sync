@@ -15,7 +15,7 @@ $login_sess_access = new SessionAccess("login");
 
 if (!$login_sess_access->account_id)
 {
-	echo "Login/account creation failed.";
+	echo "Login/account creation failed. <a href='https://shop.merchantos.com/'>Return to MerchantOS.</a>";
 	exit;
 }
 
@@ -291,6 +291,15 @@ if ($ianywhere->isUserAuthorized())
 	    	    <p>Disconnecting from QuickBooks will prevent MerchantOS from syncing any data into your QuickBooks account. You can reconnect at any time.</p>
 	    	</div>
 	    	<?php } ?>
+			<div style='margin-top: 20px; font-size: 10px; text-align: right;'>
+				<a href="#objects">Objects</a>
+			</div>
+		</section>
+		<section id="objects" style="display: none;">
+			<h2>Objects Created In QuickBooks</h2>
+			<dl class='objects'>
+			</dl>
+			<a href="javascript: mosqb.sections.activate('dashboard');">Close</a>
 		</section>
 
         <script src="javascript/jquery-1.8.2.min.js" type="text/javascript"></script>

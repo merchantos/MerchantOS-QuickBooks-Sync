@@ -35,6 +35,21 @@ class IntuitAnywhere_Account extends IntuitAnywhere_DataModel
 		throw new Exception("Account::load from QBD XML, not implemented.");
 	}
 	
+	protected function _getXMLForQBDDelete()
+	{
+		throw new Exception("Account::get XML for QBD delete, not implemented.");
+	}
+	
+	protected function _getXMLForQBODelete()
+	{
+		$xml = '<?xml version="1.0" encoding="utf-8"?>
+		<Account xmlns:ns2="http://www.intuit.com/sb/cdm/qbo" xmlns="http://www.intuit.com/sb/cdm/v2">';
+		$xml .= "<Id>" . $this->Id . "</Id>";
+		$xml .= "<SyncToken>" . $this->SyncToken . "</SyncToken>";
+		$xml .= '</Account>';
+		return $xml;
+	}
+	
 	protected function _getXMLForQBO()
 	{
 		if ($this->Id>0)
@@ -44,11 +59,11 @@ class IntuitAnywhere_Account extends IntuitAnywhere_DataModel
 		
 		$xml = '<?xml version="1.0" encoding="utf-8"?>
 		<Account xmlns:ns2="http://www.intuit.com/sb/cdm/qbo" xmlns="http://www.intuit.com/sb/cdm/v2">';
-		$xml .= "<Name>" . $this->Name . "</Name>";
+		$xml .= "<Name>" . htmlentities($this->Name) . "</Name>";
 		$xml .= "<Subtype>" . $this->Subtype . "</Subtype>";
 		if (isset($this->Desc))
 		{
-			$xml .= "<Desc>" . $this->Desc . "</Desc>";
+			$xml .= "<Desc>" . htmlentities($this->Desc) . "</Desc>";
 		}
 		if (isset($this->AcctNum))
 		{
