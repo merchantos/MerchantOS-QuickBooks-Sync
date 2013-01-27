@@ -308,8 +308,8 @@ if ($ianywhere->isUserAuthorized())
 			<script type="text/javascript" src="https://appcenter.intuit.com/Content/IA/intuit.ipp.anywhere.js"></script>
 			<script>
 			intuit.ipp.anywhere.setup({
-				menuProxy: '/QuickBooks/menuproxy.php',
-				grantUrl: '/QuickBooks/'
+				menuProxy: 'https://<?php echo $_SERVER['HTTP_HOST']; ?>/QuickBooks/menuproxy.php',
+				grantUrl: 'https://<?php echo $_SERVER['HTTP_HOST']; ?>/QuickBooks/oauth.php'
 			});
 			</script>
 		<?php } ?>
