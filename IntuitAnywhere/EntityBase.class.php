@@ -157,15 +157,26 @@ class IntuitAnywhere_EntityWebSite extends IntuitAnywhere_EntityComponent
 class IntuitAnywhere_EntityEmail extends IntuitAnywhere_EntityComponent
 {
 	public $Address;
+	public $Tag;
 	
 	protected function _loadFromQBOXML($xml)
 	{
 		$this->Address = (string)$xml->Address;
+		if (isset($xml->Tag))
+		{
+			$this->Tag = (string)$xml->Tag;
+		}
 	}
 	
 	protected function _getXMLForQBO()
 	{
-		return "<Email><Address>" . htmlentities($this->Address) . "</Address></Email>";
+		$xml = "<Email>";
+		$xml .= "<Address>" . htmlentities($this->Address) . "</Address>";
+		if (isset($this->Tag))
+		{
+			$xml .= '<Tag>' . htmlentities($this->Tag) . '</Tag>';
+		}
+		return "</Email>";
 	}
 }
 
@@ -262,12 +273,12 @@ abstract class IntuitAnywhere_EntityBase extends IntuitAnywhere_DataModel
 		}
 		if (isset($xml->Email))
 		{
-			$this->Email = array();
+			$this->Emails = array();
 			foreach ($xml->Email as $emailxml)
 			{
-				$line = new IntuitAnywhere_EntityWebSite($this->ia);
+				$line = new IntuitAnywhere_EntityEmail($this->ia);
 				$line->loadFromQBOXML($emailxml);
-				$this->Email[] = $line;
+				$this->Emails[] = $line;
 			}
 		}
 		
