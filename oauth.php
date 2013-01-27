@@ -19,6 +19,26 @@ $user = $ianywhere->getCurrentUser();
 
 $qb_sess_access->CurrentUser = $user;
 
+if ($login_sess_access->account_creation)
+{
+	/* we are hypothetically creating a new account, so let's try to do that
+	   we need to take the OAuth access, gather whatever info we want from QB
+	   then use the MerchantOS API (with a system key) to create a MOS account.
+	   Then get an API key to this MOS account. Then forward on to first start.
+	   The user will loop back here for sync setup.
+	*/
+	/*
+	   Info to get from QB:
+		from current user: First Name, Last Name, Email
+		from company meta data:
+			email, if not grabbed above (COMPANY_EMAIL or EMAIL_ADDRESS_FOR_CUSTOMERS)
+			business QBNRegisteredCompanyName
+			business address (PUBLIC_ADDRESS or COMPANY_ADDRESS)
+			business phone FreeFormNumber
+	*/
+	header("location: ./signup.php");
+}
+
 // we're all done so save this to the db
 $oauth_array = $oauth_sess_access->getArray();
 $qb_array = $qb_sess_access->getArray();
