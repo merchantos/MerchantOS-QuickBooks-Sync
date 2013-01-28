@@ -29,4 +29,11 @@ class MerchantOS_Shop
 		}
 		return $shops;
 	}
+	
+	function updateName($shopID,$name)
+	{
+	    $xml = "<Shop><name>".htmlentities($name)."</name></Shop>";
+		$shop = $this->_mosapi->makeAPICall("Account.Shop","Update",$xml);
+		return $shop;
+	}
 }

@@ -5,6 +5,7 @@ GLOBAL $_OAUTH_INTUIT_CONFIG;
 
 require_once("session.inc.php");
 require_once("database.inc.php");
+require_once("view.inc.php")
 
 require_once("lib/Validation.class.php");
 
@@ -96,30 +97,60 @@ function _displaySignupForm()
  * @param string $zip The zip code / postal code for the business address
  * @return MerchantOS_SystemCustomer The data object for the created MOS account
  */
-function _createMOSAccount($email,$password,$phone,$address1,$address2,$city,$state,$zip)
+function _createMOSAccount($email,$password,$shop_name,$phone)
 {
+    // @todo - we're probably going to need some more stringent validation here (duh)
+    // @todo - using _POST to verify that the form was submitted, again, not awesome.
+    
+	if($_POST['email'] || $_POST['password'] || $_POST['shop_name'] || $_POST['phone'])
+    {
 	/**
-	 * @todo display a form with default data filled in for:
+	 * Display a form with default data filled in for:
 	 * $email
 	 * $shop_name
 	 * $phone
 	 * $address
 	 *
-	 * After form submit:
-	 * 
-	 * @todo Create account in MOS (we need a system level mos key to do this)
-	 * use:
-	 * $email
-	 * $phone
-	 *
-	 * @todo after account creation modify the Shop with:
-	 * $shop_name
-	 * $address
-	 *
-	 * @todo after account creation create an API key
-	 * We need a control that can create an API key without user interaction, or the Account create method needs to be able to do this optionally (maybe best option)
 	 */
+	    render_view('createaccount', $locals = array('email' => $email, 'shop_name' => $shop_name, 'phone' => $phone));
+	    return true;
+    }
+
+    /**
+ 	 * Create account
+ 	 */
+    $mos_account = new MerchantOS_Account(MOS_API_KEY);
+    $account = $mos_account->create($shop_name,$email,$phone,$password);
+
+    /**
+  	 * Create Customer API Key
+  	 * @todo after account creation create an API key
+  	 * We need a control that can create an API key without user interaction, or the Account create method needs to be able to do this optionally (maybe best option)
+  	 */
+
+
+
+    /**
+     * Setup customer-level API access
+     * @todo Setup $merchantos_sess_access variable so we can use it to update Shop name
+     *
+     **/ 
+
+
+
+    /**
+     * Update Shop name to value of $shop_name
+     *
+     **/ 
+    $mos_shop = new MerchantOS_Shop($merchantos_sess_access->api_key,$merchantos_sess_access->api_account);
+    $shops = $mos_shop->listAll();
+
+    // Update first  shop with $shop_name
+    $mos_shop->updateShopName($shops[0]['shopID'],$shop_name);         
+ }
+
 }
+
 
 /**
  * after we've created our account we should have an API key, we can do the stuff normally done in session.inc.php
