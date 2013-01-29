@@ -1,7 +1,7 @@
 <?php
 
 require_once("config.inc.php");
-require_once("view.inc.php")
+require_once("view.inc.php");
 
 GLOBAL $_OAUTH_INTUIT_CONFIG;
 
@@ -25,6 +25,7 @@ $ianywhere = new IntuitAnywhere($qb_sess_access);
 
 $is_authorized = false;
 $is_setup = false;
+$user = null;
 
 if ($ianywhere->isUserAuthorized())
 {

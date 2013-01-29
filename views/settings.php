@@ -10,7 +10,7 @@
 	<a href="./oauth.php" class="button">Get Started &rarr;</a>
 </section>
 
-<section id="dashboard" class="<?php if ($is_authorized && $is_setup) echo "selected"; ?>" >
+<section id="dashboard" class="<?php if ($is_authorized && $is_setup) echo "selected"; ?>" style="display: none;">
 	<header>
 		<h1>Dashboard</h1>
 	    <nav>

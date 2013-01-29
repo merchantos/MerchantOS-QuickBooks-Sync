@@ -36,7 +36,8 @@ if ($login_sess_access->account_creation)
 			business address (PUBLIC_ADDRESS or COMPANY_ADDRESS)
 			business phone FreeFormNumber
 	*/
-	header("location: ./signup.php");
+	header("location: ./createaccount.php");
+	exit;
 }
 
 // we're all done so save this to the db

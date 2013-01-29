@@ -7,14 +7,16 @@ function render_view($view_name, $locals = array()) {
     // Full path to file to be included
     $full_file_path = 'views/'. $view_name .'.php';
     
+    $system_file_path = $_SERVER['DOCUMENT_ROOT'] . '/Quickbooks/' . $full_file_path;
+    
     // Check that view_name is valid length ( > 0)
     if(strlen($view_name) <= 0)
     {
         throw new RuntimeException("view_name was not supplied.");
     }
 
-    // Check that primary view file exists
-    if(file_exists($full_file_path))
+    // Check that primary view file exists    
+    if(file_exists($system_file_path))
     {
         throw new RuntimeException("No view matching the view_name supplied ($view_name) was found.");
     }

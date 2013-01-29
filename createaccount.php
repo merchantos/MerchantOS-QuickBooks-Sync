@@ -29,8 +29,15 @@ if (!isset($login_sess_access->account_creation) || !$login_sess_access->account
 	exit;
 }
 
+if(!isset($_POST['form_name'])) 
+{
+    _displaySignupForm();
+}
+
 function _displaySignupForm()
 {
+    global $oauth_sess_access, $_OAUTH_INTUIT_CONFIG;
+    
 	$qb_sess_access = new SessionAccess("qb");
 
 	// setup oauth but don't do any user authorization (that should have been done in oauth.php before we got here)
@@ -40,11 +47,12 @@ function _displaySignupForm()
 	$email = false;
 	
 	// we already filled CurrentUser in on oauth.php, use it here as a possible login email
-	$user = $qb_sess_access->CurrentUser = $user;
+	$user = $qb_sess_access->CurrentUser;
+
 	// see if $user is an email address, if it is use it as the deafult login name
-	if (helpers_Validation::ValidateAddress($user))
+	if (helpers_Validation::ValidateAddress($user['EmailAddress']))
 	{
-		$email = $user;
+		$email = $user['EmailAddress'];
 	}
 	
 	// grab the company data from QB
@@ -165,4 +173,4 @@ function _createQBSyncAccount($mos_api_account_num,$mos_api_key,$mos_return_url)
 	mosqb_database::writeOAuth($login_sess_access->account_id,array("oauth"=>$oauth_array,"qb"=>$qb_array,"renew"=>$renew));
 }
 
-header("location: ./");
+// header("location: ./");
