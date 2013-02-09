@@ -16,6 +16,7 @@ define("MERCHANTOS_ENVIRONMENT","development"); // could be development, staging
 define("AIRBRAKE_API_KEY","<airbrake project key>");
 
 define("MOS_API_URL","https://api.merchantos.com/API/");
+define("MOS_SYSTEM_API_KEY","<MerchantOS API Key With System Access To Account Control>");
 
 define("INTUIT_CONSUMER_KEY", "<oauth client key>");
 define("INTUIT_CONSUMER_SECRET", "<oauth client secrete>");

@@ -12,6 +12,9 @@ require_once("lib/Validation.class.php");
 require_once("IntuitAnywhere/IntuitAnywhere.class.php");
 require_once("IntuitAnywhere/CompanyMetaData.class.php");
 
+require_once("MerchantOS/Account.class.php");
+require_once("MerchantOS/Shop.class.php");
+
 $oauth_sess_access = new SessionAccess("oauth");
 $login_sess_access = new SessionAccess("login");
 
@@ -29,7 +32,15 @@ if (!isset($login_sess_access->account_creation) || !$login_sess_access->account
 	exit;
 }
 
-if(!isset($_POST['form_name'])) 
+if(isset($_POST['form_name']) && $_POST['form_name'] == 'createaccount') 
+{
+	$email = $_POST['email'];
+	$password = $_POST['password'];
+	$shop_name = $_POST['shop_name'];
+	$phone = $_POST['phone'];
+	_createMOSAccount($email,$password,$shop_name,$phone);
+}
+else
 {
     _displaySignupForm();
 }
@@ -50,7 +61,7 @@ function _displaySignupForm()
 	$user = $qb_sess_access->CurrentUser;
 
 	// see if $user is an email address, if it is use it as the deafult login name
-	if (helpers_Validation::ValidateAddress($user['EmailAddress']))
+	if (lib_Validation::ValidateAddress($user['EmailAddress']))
 	{
 		$email = $user['EmailAddress'];
 	}
@@ -72,6 +83,10 @@ function _displaySignupForm()
 	$phone = $ia_company->getCompanyPhone();
 	$address = $ia_company->getCompanyAddress();
 	
+	// save address for use in creating account
+	$login_sess_access = new SessionAccess("login");
+	$login_sess_access->qb_address = $address;
+	
 	render_view('createaccount', $locals = array('email' => $email, 'shop_name' => $shop_name, 'phone' => $phone));
 	return true;
 }
@@ -89,28 +104,36 @@ function _displaySignupForm()
  * @return MerchantOS_SystemCustomer The data object for the created MOS account
  */
 function _createMOSAccount($email,$password,$shop_name,$phone)
-{
+{	
+	$login_sess_access = new SessionAccess("login");
+	$address = $login_sess_access->qb_address;
+
     // @todo - we're probably going to need some more stringent validation here (duh)
-	if (!helpers_ValidateAddress::ValidateAddress($email))
+	if (!lib_Validation::ValidateAddress($email))
 	{
 		throw new Exception("$email email address is invalid.");
 	}
 	// Make sure the password is submitted and valid length
 	if (strlen($password) < 5)
 	{
-		$errors[1] = 'Password must be at least 6 characters';
+		throw new Exception('Password must be at least 6 characters');
 	}
 	// Make sure phone is submitted and valid
 	if ($phone == '' OR strlen(preg_replace('/\D/i', '', $phone)) < 9)
 	{
-		$errors[2] = 'Phone must be at least 10 digits';
+		throw new Exception('Phone must be at least 10 digits');
 	}
 	
     /**
  	 * Create account
  	 */
-    $mos_account = new MerchantOS_Account(MOS_API_KEY);
+    $mos_account = new MerchantOS_Account(MOS_SYSTEM_API_KEY);
     $account = $mos_account->create($shop_name,$email,$phone,$password);
+	
+	if (!isset($account->SystemCustomerID))
+	{
+		throw new Exception("Could not create MerchantOS account: " . (string)$account->message);
+	}
 	
     /**
   	 * Create Customer API Key
@@ -138,9 +161,16 @@ function _createMOSAccount($email,$password,$shop_name,$phone)
     $shops = $mos_shop->listAll();
 
     // Update first  shop with $shop_name
-    $mos_shop->updateShopName($shops[0]['shopID'],$shop_name);
+	$shop_updates = array("name"=>$shop_name);
+	if ($address)
+	{
+		$shop_updates['address'] = $address;
+	}
+    $mos_shop->update($shops[0]['shopID'],$shop_updates);
 	
 	_createQBSyncAccount($merchantos_sess_access->api_account,$merchantos_sess_access->api_key,$mos_return_url);
+	
+	header("location: " . $mos_return_url . "?form_name=login&login_name=" . urlencode($email) . "&login_password=" . urlencode($password) . "&thankyou=1");
 }
 
 /**

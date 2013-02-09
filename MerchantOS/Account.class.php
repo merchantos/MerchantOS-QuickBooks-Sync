@@ -19,7 +19,7 @@ class MerchantOS_Account
 	    // @todo - are these values sanitized already?
 	    
 	    $xml = "<SystemCustomer>
-    <name>".htmlentities($shop_name)."</name>
+    <name>".htmlentities($account_name)."</name>
     <SystemContact>
         <email>".htmlentities($email)."</email>
         <phone1>".htmlentities($phone)."</phone1>
@@ -31,8 +31,8 @@ class MerchantOS_Account
     </SystemUsers>
 </SystemCustomer>";
 	    
-		$response = $this->_mosapi->makeAPICall("Account","Create",false,$system_customer_json);
+		$response = $this->_mosapi->makeAPICall("Account","Create",false,$xml);
 		
-		return json_decode($response);
+		return $response;
 	}
 }

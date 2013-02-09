@@ -4,7 +4,17 @@ require_once("config.inc.php");
 require_once("view.inc.php");
 GLOBAL $_OAUTH_INTUIT_CONFIG;
 
-require_once("session.inc.php");
+// we'll load the session ourself for $needkey=false handling (instead of calling session.inc.php)
+require_once("lib/Session.class.php");
+try
+{
+	lib_Session::init(false);
+}
+catch (Exception $e)
+{
+	echo $e->getMessage();
+	exit;
+}
 
 $login_sess_access = new SessionAccess("login");
 

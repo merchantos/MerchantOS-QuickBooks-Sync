@@ -2,9 +2,9 @@
 /**
  * A class of validation functions
  * @author Justin Laing <justin@merchantos.com>
- * @package helpers
+ * @package lib
  */
-class helpers_Validation
+class lib_Validation
 {
 	/**
 	 * Validates that the passed value is a UPC or EAN barcode.
