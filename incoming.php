@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @todo Need a page that basically says hold tight we are loading
+ */
+
 require_once("config.inc.php");
 require_once("view.inc.php");
 GLOBAL $_OAUTH_INTUIT_CONFIG;

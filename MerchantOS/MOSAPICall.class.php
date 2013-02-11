@@ -13,11 +13,6 @@ class MOSAPICall
 	{
 		$this->_api_key = $api_key;
 		$this->_account_num = $account_num;
-		
-		if (!$account_num)
-		{
-			$this->_queryAccountNum();
-		}
 	}
 	
 	protected function _queryAccountNum()
@@ -50,7 +45,16 @@ class MOSAPICall
 		$curl->setVerifyHost(0);
 		$curl->setCustomRequest($custom_request);
 		
-		$control_url = $this->_mos_api_url . str_replace(".","/",str_replace("Account.","Account." . $this->_account_num . ".",$controlname));
+		if (stripos($controlname,"Account.")!==false)
+		{
+			if (!isset($this->_account_num))
+			{
+				throw new Exception("MerchantOS Account ID needs to be specified to call account controls.");
+			}
+			$controlname = str_replace("Account.","Account." . $this->_account_num . ".",$controlname);
+		}
+		
+		$control_url = $this->_mos_api_url . str_replace(".","/",$controlname);
 		if (isset($unique_id))
 		{
 			$control_url .= "/" . $unique_id;

@@ -9,9 +9,9 @@ class MerchantOS_Account
 	 */
 	private $_mosapi;
 	
-	function __construct($apikey)
+	function __construct($apikey,$account_num=null)
 	{
-		$this->_mosapi = new MOSAPICall($apikey);
+		$this->_mosapi = new MOSAPICall($apikey,$account_num);
 	}
 	
 	function create($account_name,$email,$phone,$password)
@@ -31,7 +31,7 @@ class MerchantOS_Account
     </SystemUsers>
 </SystemCustomer>";
 	    
-		$response = $this->_mosapi->makeAPICall("Account","Create",false,$xml);
+		$response = $this->_mosapi->makeAPICall("Account","Create",null,$xml);
 		
 		return $response;
 	}

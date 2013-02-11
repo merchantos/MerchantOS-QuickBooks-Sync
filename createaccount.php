@@ -130,7 +130,7 @@ function _createMOSAccount($email,$password,$shop_name,$phone)
     $mos_account = new MerchantOS_Account(MOS_SYSTEM_API_KEY);
     $account = $mos_account->create($shop_name,$email,$phone,$password);
 	
-	if (!isset($account->SystemCustomerID))
+	if (!isset($account->systemCustomerID))
 	{
 		throw new Exception("Could not create MerchantOS account: " . (string)$account->message);
 	}
@@ -140,6 +140,7 @@ function _createMOSAccount($email,$password,$shop_name,$phone)
   	 * @todo after account creation create an API key
   	 * We need a control that can create an API key without user interaction, or the Account create method needs to be able to do this optionally (maybe best option)
   	 */
+	// READY TO PUT THIS IN NOW!
 	$mos_api_key = null;
 
 
@@ -149,7 +150,7 @@ function _createMOSAccount($email,$password,$shop_name,$phone)
      **/ 
 	$merchantos_sess_access = new SessionAccess("merchantos");
 	$merchantos_sess_access->api_key = $mos_api_key;
-	$merchantos_sess_access->api_account = (integer)$account->SystemCustomerID;
+	$merchantos_sess_access->api_account = (integer)$account->systemCustomerID;
 	
 	$mos_return_url = (string)$account->redirect;
 	
