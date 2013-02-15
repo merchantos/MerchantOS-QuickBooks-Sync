@@ -13,6 +13,8 @@ require_once("IntuitAnywhere/IntuitAnywhere.class.php");
 require_once("IntuitAnywhere/CompanyMetaData.class.php");
 
 require_once("MerchantOS/Account.class.php");
+require_once("MerchantOS/SystemAPIKey.class.php");
+require_once("MerchantOS/SystemAPIKeyAccess.class.php");
 require_once("MerchantOS/Shop.class.php");
 
 $oauth_sess_access = new SessionAccess("oauth");
@@ -87,7 +89,7 @@ function _displaySignupForm()
 	$login_sess_access = new SessionAccess("login");
 	$login_sess_access->qb_address = $address;
 	
-	render_view('createaccount', $locals = array('email' => $email, 'shop_name' => $shop_name, 'phone' => $phone));
+	render_view('createaccount', $locals = array('email' => $email, 'shop_name' => $shop_name, 'phone' => $phone, 'no_title'=>true));
 	return true;
 }
 
@@ -134,23 +136,39 @@ function _createMOSAccount($email,$password,$shop_name,$phone)
 	{
 		throw new Exception("Could not create MerchantOS account: " . (string)$account->message);
 	}
+	$systemCustomerID = (integer)$account->systemCustomerID;
+	$systemUserID = (integer)$account->SystemUsers->SystemUser->systemUserID;
 	
     /**
   	 * Create Customer API Key
-  	 * @todo after account creation create an API key
   	 * We need a control that can create an API key without user interaction, or the Account create method needs to be able to do this optionally (maybe best option)
   	 */
 	// READY TO PUT THIS IN NOW!
-	$mos_api_key = null;
-
-
+	// use $systemCustomerID $systemUserID with MOS_API_CLIENT_ID to create the key below
+	// make a SystemAPIKey -> create
+	$mos_api_key = new MerchantOS_SystemAPIKey(MOS_SYSTEM_API_KEY);
+	$api_key = $mos_api_key->create($systemCustomerID,$systemUserID,MOS_API_CLIENT_ID);
+	if (!isset($api_key->apiKey))
+	{
+		throw new Exception("Could not create MerchantOS API key: " . (string)$api_key->message);
+	}
+	$apiKey = (string)$api_key->apiKey;
+	$systemAPIKeyID = (integer)$api_key->systemAPIKeyID;
+	// make a SystemAPIKeyAccess for the key just made -> create
+	$mos_api_key_access = new MerchantOS_SystemAPIKeyAccess(MOS_SYSTEM_API_KEY);
+	$api_key_access = $mos_api_key_access->create($systemAPIKeyID);
+	if (!isset($api_key_access->systemAPIKeyAccessID))
+	{
+		throw new Exception("Could not create MerchantOS API key access: " . (string)$api_key->message);
+	}
+	
     /**
      * Setup customer-level API access
      *
      **/ 
 	$merchantos_sess_access = new SessionAccess("merchantos");
-	$merchantos_sess_access->api_key = $mos_api_key;
-	$merchantos_sess_access->api_account = (integer)$account->systemCustomerID;
+	$merchantos_sess_access->api_key = $apiKey;
+	$merchantos_sess_access->api_account = $systemCustomerID;
 	
 	$mos_return_url = (string)$account->redirect;
 	
@@ -171,7 +189,7 @@ function _createMOSAccount($email,$password,$shop_name,$phone)
 	
 	_createQBSyncAccount($merchantos_sess_access->api_account,$merchantos_sess_access->api_key,$mos_return_url);
 	
-	header("location: " . $mos_return_url . "?form_name=login&login_name=" . urlencode($email) . "&login_password=" . urlencode($password) . "&thankyou=1");
+	header("location: " . $mos_return_url . "?form_name=login&login_name=" . urlencode($email) . "&login_password=" . urlencode($password) . "&redirect_after_login=" . urlencode("openid.php?form_name=intuit&return=1"));
 }
 
 /**
@@ -182,9 +200,20 @@ function _createMOSAccount($email,$password,$shop_name,$phone)
  */
 function _createQBSyncAccount($mos_api_account_num,$mos_api_key,$mos_return_url)
 {
+	$mos_return_url = str_replace("register.php","openid.php",$mos_return_url);
+	if (stripos($mos_return_url,"?")!==false)
+	{
+		$mos_return_url .= "&form_name=intuit&return=1";
+	}
+	else
+	{
+		$mos_return_url .= "?form_name=intuit&return=1";
+	}
+	
 	$qb_sess_access = new SessionAccess("qb");
 	$merchantos_sess_access = new SessionAccess("merchantos");
 	$login_sess_access = new SessionAccess("login");
+	$oauth_sess_access = new SessionAccess("oauth");
 	
 	// setup credentials for pulling from MOS API
 	$merchantos_sess_access->api_key = $mos_api_key;

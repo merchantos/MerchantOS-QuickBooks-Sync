@@ -24,7 +24,7 @@ class MerchantOS_Shop
 		{
 			$shops[] = array(
 				"shopID"=>(integer)$shopxml->shopID,
-				"name"=>(string)$shopxml->name
+				"name"=>(string)$shopxml->name,
 			);
 		}
 		return $shops;
@@ -37,22 +37,22 @@ class MerchantOS_Shop
 		{
 			if (is_array($value))
 			{
-				if ($key=="Address")
+				if ($key=="address")
 				{
 					$contact = $xml->addChild("Contact");
 					$addresses = $contact->addChild("Addresses");
 					$contact_address = $addresses->addChild("ContactAddress");
-					$contact_address->addChild("address1",$value['line1']);
-					$contact_address->addChild("address2",$value['line2']);
-					$contact_address->addChild("city",$value['city']);
-					$contact_address->addChild("state",$value['state']);
-					$contact_address->addChild("zip",$value['zip']);
+					$contact_address->addChild("address1",htmlentities($value['line1']));
+					$contact_address->addChild("address2",htmlentities($value['line2']));
+					$contact_address->addChild("city",htmlentities($value['city']));
+					$contact_address->addChild("state",htmlentities($value['state']));
+					$contact_address->addChild("zip",htmlentities($value['zip']));
 				}
 				continue;
 			}
 			$xml->addChild($key,htmlentities($value));
 		}
-		$shop = $this->_mosapi->makeAPICall("Account.Shop","Update",$xml->asXML());
+		$shop = $this->_mosapi->makeAPICall("Account.Shop","Update",$shopID,$xml->asXML());
 		return $shop;
 	}
 }

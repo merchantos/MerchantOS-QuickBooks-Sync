@@ -17,6 +17,7 @@ define("AIRBRAKE_API_KEY","<airbrake project key>");
 
 define("MOS_API_URL","https://api.merchantos.com/API/");
 define("MOS_SYSTEM_API_KEY","<MerchantOS API Key With System Access To Account Control>");
+define("MOS_API_CLIENT_ID","MerchantOS API Client ID");
 
 define("INTUIT_CONSUMER_KEY", "<oauth client key>");
 define("INTUIT_CONSUMER_SECRET", "<oauth client secrete>");

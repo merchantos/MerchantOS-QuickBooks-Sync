@@ -20,6 +20,7 @@ class MerchantOS_Account
 	    
 	    $xml = "<SystemCustomer>
     <name>".htmlentities($account_name)."</name>
+	<promotionCode>QuickBooks</promotionCode>
     <SystemContact>
         <email>".htmlentities($email)."</email>
         <phone1>".htmlentities($phone)."</phone1>

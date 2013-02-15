@@ -5,7 +5,6 @@
 </div>
 
 <section id="welcome" class="selected" style="display: none;">
-	<h1>Welcome</h1>
-	<p>To get started we'll need access to your QuickBooks data.</p>
-	<a href="./oauth.php" class="button">Get Started &rarr;</a>
+	<h1>Hang Tight!</h1>
+	<p>We're connecting to your QuickBooks account.</p>
 </section>

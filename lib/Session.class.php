@@ -43,6 +43,11 @@ class lib_Session
 		}
 	}
 	
+	public static function reset()
+	{
+		$_SESSION = array();
+	}
+	
 	protected static function _initMOSKey($key)
 	{
 		require_once("database.inc.php");
@@ -68,11 +73,11 @@ class lib_Session
 		
 		if (isset($oauth_qb_arrays['oauth']) && isset($oauth_qb_arrays['qb']) && isset($oauth_qb_arrays['renew']))
 		{
-			self::_loadOAuth($oauth_qb_arrays);
+			self::_loadOAuth($oauth_qb_arrays,$login_sess_access);
 		}
 	}
 	
-	protected static function _loadOAuth($oauth_qb_arrays)
+	protected static function _loadOAuth($oauth_qb_arrays,$login_sess_access)
 	{
 		$oauth_sess_access = new SessionAccess("oauth");
 		$oauth_sess_access->loadArray($oauth_qb_arrays['oauth']);
@@ -87,11 +92,11 @@ class lib_Session
 		
 		if ($oauth_qb_arrays['renew'] <= time())
 		{
-			self::_renewIntuitOAuth($oauth_sess_access,$qb_sess_access);
+			self::_renewIntuitOAuth($oauth_sess_access,$qb_sess_access,$login_sess_access);
 		}
 	}
 	
-	protected static function _renewIntuitOAuth($oauth_sess_access,$qb_sess_access)
+	protected static function _renewIntuitOAuth($oauth_sess_access,$qb_sess_access,$login_sess_access)
 	{
 		// time to reconnect/renew
 		require_once("IntuitAnywhere/IntuitAnywhere.class.php");
