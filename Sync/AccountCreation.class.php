@@ -99,7 +99,7 @@ class Sync_AccountCreation
 		 * get company meta data for name/phone/address
 		 *
 		 */
-		$company_meta_data = _getCompanyMetaData();
+		$company_meta_data = $this->_getCompanyMetaData();
 		
 		$shop_name = $company_meta_data->CompanyName;
 		$phone = $company_meta_data->getCompanyPhone();
@@ -118,8 +118,7 @@ class Sync_AccountCreation
 		 * Create account
 		 * 
 		 */
-		$mos_account = $this->_getMerchantOSAccount();
-		$account = $mos_account->create($shop_name,$email,$firstName,$lastName,$phone,$password);
+		$account = $this->_createMerchantOSAccount($shop_name,$email,$firstName,$lastName,$phone,$password);
 		
 		if (!isset($account->systemCustomerID))
 		{
@@ -133,7 +132,7 @@ class Sync_AccountCreation
 		 * Create Customer API Key
 		 * 
 		 */
-		$apiKey = _createMOSAPIKey($systemCustomerID,$systemUserID);
+		$apiKey = $this->_createMOSAPIKey($systemCustomerID,$systemUserID);
 		
 		/**
 		 * Associate the OpenID with the new user login/account
@@ -194,20 +193,11 @@ class Sync_AccountCreation
 	
 		$this->_db->writeOAuth($this->_login_session->account_id,array("oauth"=>$oauth_array,"qb"=>$qb_array,"renew"=>$renew));
 	}
-
-	/**
-	 * Get a MerchantOS_Account object, useful for testing so a mock object can override
-	 */
-	protected function _getMerchantOSAccount()
-	{
-		return new MerchantOS_Account(MOS_SYSTEM_API_KEY);
-	}
 	
 	protected function _getCompanyMetaData()
 	{
 		// grab the company data from QB
-		$ia_company = new IntuitAnywhere_CompanyMetaData($this->_ia);
-		$ia_companies = $ia_company->listAll();
+		$ia_companies = $this->_getIntuitAnywhereCompanies();
 		if (count($ia_companies)!=1)
 		{
 			throw new Exception("Could not load QuickBooks company data for account sign up.");
@@ -217,8 +207,7 @@ class Sync_AccountCreation
 	
 	protected function _updateMOSShop($apiKey,$systemCustomerID,$shop_name,$address)
 	{
-		$mos_shop = new MerchantOS_Shop($apiKey,$systemCustomerID);
-		$shops = $mos_shop->listAll();
+		$shops = $this->_listAllMerchantOSShops($apiKey,$systemCustomerID);
 	
 		// Update first  shop with $shop_name
 		$shop_updates = array("name"=>$shop_name);
@@ -226,7 +215,8 @@ class Sync_AccountCreation
 		{
 			$shop_updates['address'] = $address;
 		}
-		$mos_shop->update($shops[0]['shopID'],$shop_updates);
+		
+		$this->_updateMerchantOSShops($apiKey,$systemCustomerID,$shops[0]['shopID'],$shop_updates);
 	}
 	
 	protected function _createMOSAPIKey($systemCustomerID,$systemUserID)
@@ -234,8 +224,7 @@ class Sync_AccountCreation
 		// READY TO PUT THIS IN NOW!
 		// use $systemCustomerID $systemUserID with MOS_API_CLIENT_ID to create the key below
 		// make a SystemAPIKey -> create
-		$mos_api_key = new MerchantOS_SystemAPIKey(MOS_SYSTEM_API_KEY);
-		$api_key = $mos_api_key->create($systemCustomerID,$systemUserID,MOS_API_CLIENT_ID);
+		$api_key = $this->_createMerchantOSSystemAPIKey($systemCustomerID,$systemUserID);
 		if (!isset($api_key->apiKey))
 		{
 			throw new Exception("Could not create MerchantOS API key: " . (string)$api_key->message);
@@ -243,8 +232,7 @@ class Sync_AccountCreation
 		$apiKey = (string)$api_key->apiKey;
 		$systemAPIKeyID = (integer)$api_key->systemAPIKeyID;
 		// make a SystemAPIKeyAccess for the key just made -> create
-		$mos_api_key_access = new MerchantOS_SystemAPIKeyAccess(MOS_SYSTEM_API_KEY);
-		$api_key_access = $mos_api_key_access->create($systemAPIKeyID);
+		$api_key_access = $this->_createMerchantOSSystemAPIKeyAccess($systemAPIKeyID);
 		if (!isset($api_key_access->systemAPIKeyAccessID))
 		{
 			throw new Exception("Could not create MerchantOS API key access: " . (string)$api_key->message);
@@ -254,11 +242,73 @@ class Sync_AccountCreation
 	
 	protected function _associateMOSOpenID($systemUserID,$openid)
 	{
-		$mos_openid = new MerchantOS_SystemOpenID(MOS_SYSTEM_API_KEY);
-		$openid = $mos_openid->create($systemUserID,$openid);
+		$openid = $this->_associateMerchantOSOpenID($systemUserID,$openid);
 		if (!isset($openid->systemOpenIDID))
 		{
 			throw new Exception("Could not associate OpenID with MerchantOS SystemUser: " . (string)$openid->message);
 		}
+	}
+	
+	/**
+	 * Use MerchantOS_Account to create a new object on MOS API. Useful to override in mock object for testing.
+	 * @return SimpleXMLElement
+	 */
+	protected function _createMerchantOSAccount($shop_name,$email,$firstName,$lastName,$phone,$password)
+	{
+		$mos_account = new MerchantOS_Account(MOS_SYSTEM_API_KEY);
+		return $mos_account->create($shop_name,$email,$firstName,$lastName,$phone,$password);
+	}
+	/**
+	 * Use MerchantOS_Shop to list shops from the MOS API. Useful to override in mock object for testing.
+	 * @return array Array of XML shop results
+	 */
+	protected function _listAllMerchantOSShops($apiKey,$systemCustomerID)
+	{
+		$mos_shop = new MerchantOS_Shop($apiKey,$systemCustomerID);
+		return $mos_shop->listAll();
+	}
+	/**
+	 * Use MerchantOS_Shop to update shops in the MOS API. Useful to override in mock object for testing.
+	 */
+	protected function _updateMerchantOSShops($apiKey,$systemCustomerID,$shopID,$shop_updates)
+	{
+		$mos_shop = new MerchantOS_Shop($apiKey,$systemCustomerID);
+		$mos_shop->update($shopID,$shop_updates);
+	}
+	/**
+	 * Use IntuitAnywhere_CompanyMetaData to query IntuitAnywhere API to get company  meta data. Use this function to override in tests.
+	 * @return array Array of IntuitAnywhere_CompanyMetaData
+	 */
+	protected function _getIntuitAnywhereCompanies()
+	{
+		$ia_company = new IntuitAnywhere_CompanyMetaData($this->_ia);
+		return $ia_company->listAll();
+	}
+	/**
+	 * Get a MerchantOS_SystemAPIKey object, useful for testing so a mock object can override
+	 * @return SimpleXMLElement
+	 */
+	protected function _createMerchantOSSystemAPIKey($systemCustomerID,$systemUserID)
+	{
+		$mos_api_key = new MerchantOS_SystemAPIKey(MOS_SYSTEM_API_KEY);
+		return $mos_api_key->create($systemCustomerID,$systemUserID,MOS_API_CLIENT_ID);
+	}
+	/**
+	 * Use MerchantOS_SystemAPIKeyAccess to create a new object on MOS API. Useful to override in mock object for testing.
+	 * @return SimpleXMLElement
+	 */
+	protected function _createMerchantOSSystemAPIKeyAccess($systemAPIKeyID)
+	{
+		$mos_api_key_access = new MerchantOS_SystemAPIKeyAccess(MOS_SYSTEM_API_KEY);
+		return $mos_api_key_access->create($systemAPIKeyID);
+	}
+	/**
+	 * Use MerchantOS_SystemOpenID to associate a new openid on MOS API. Useful to override in mock object for testing.
+	 * @return SimpleXMLElement
+	 */
+	protected function _associateMerchantOSOpenID($systemUserID,$openid)
+	{
+		$mos_openid = new MerchantOS_SystemOpenID(MOS_SYSTEM_API_KEY);
+		return $mos_openid->create($systemUserID,$openid);
 	}
 }

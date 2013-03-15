@@ -5,30 +5,34 @@
  */
 class SessionAccess
 {
-	private $type;
+	protected $_sess;
+	protected $_type;
+	
+	
 	function __construct($type)
 	{
-		$this->type = $type;
-		if (!isset($_SESSION[$this->type]))
+		$this->_type = $type;
+		$this->_sess =& $_SESSION;
+		if (!isset($this->_sess[$this->_type]))
 		{
-			$_SESSION[$this->type] = array();
+			$this->_sess[$this->_type] = array();
 		}
 	}
 	function __get($name)
 	{
-		if (!isset($_SESSION[$this->type][$name]))
+		if (!isset($this->_sess[$this->_type][$name]))
 		{
 			return null;
 		}
-		return $_SESSION[$this->type][$name];
+		return $this->_sess[$this->_type][$name];
 	}
 	function __set($name,$value)
 	{
-		$_SESSION[$this->type][$name] = $value;
+		$this->_sess[$this->_type][$name] = $value;
 	}
 	function __isset($name)
 	{
-		if (isset($_SESSION[$this->type][$name]))
+		if (isset($this->_sess[$this->_type][$name]))
 		{
 			return true;
 		}
@@ -36,9 +40,9 @@ class SessionAccess
 	}
 	function __unset($name)
 	{
-		if (isset($_SESSION[$this->type][$name]))
+		if (isset($this->_sess[$this->_type][$name]))
 		{
-			unset($_SESSION[$this->type][$name]);
+			unset($this->_sess[$this->_type][$name]);
 		}
 	}
 	
@@ -48,7 +52,7 @@ class SessionAccess
 	 */
 	function getArray()
 	{
-		return $_SESSION[$this->type];
+		return $this->_sess[$this->_type];
 	}
 	
 	/**
@@ -57,7 +61,7 @@ class SessionAccess
 	 */
 	function loadArray($arr)
 	{
-		$_SESSION[$this->type] = $arr;
+		$this->_sess[$this->_type] = $arr;
 	}
 	
 	/**
@@ -67,7 +71,7 @@ class SessionAccess
 	 */
 	function storeCache($name,$value)
 	{
-		$_SESSION[$this->type][$name."_cache"] = array("time"=>time(),"value"=>$value);
+		$this->_sess[$this->_type][$name."_cache"] = array("time"=>time(),"value"=>$value);
 	}
 	
 	/**
@@ -77,11 +81,11 @@ class SessionAccess
 	 */
 	function getCache($name,$timeout)
 	{
-		if (!isset($_SESSION[$this->type][$name."_cache"]))
+		if (!isset($this->_sess[$this->_type][$name."_cache"]))
 		{
 			return null;
 		}
-		$cache = $_SESSION[$this->type][$name."_cache"];
+		$cache = $this->_sess[$this->_type][$name."_cache"];
 		if (isset($cache['time']) && time() - $cache['time'] < $timeout)
 		{
 			return $cache['value'];
@@ -94,6 +98,6 @@ class SessionAccess
 	 */
 	function clear()
 	{
-		$_SESSION[$this->type] = array();
+		$this->_sess[$this->_type] = array();
 	}
 }
