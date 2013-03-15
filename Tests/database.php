@@ -6,7 +6,7 @@ exit;
 require_once("../config.inc.php");
 GLOBAL $_OAUTH_INTUIT_CONFIG;
 
-require_once("database.inc.php");
+require_once("Sync/Database.class.php");
 
 $api_key = "test" . time();
 

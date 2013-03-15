@@ -5,7 +5,7 @@ GLOBAL $_OAUTH_INTUIT_CONFIG;
 require_once("session.inc.php");
 /*
 require_once("session.inc.php");
-require_once("database.inc.php");
+require_once("Sync/Database.class.php");
 */
 require_once("view.inc.php");
 $login_sess_access = new SessionAccess("login");

@@ -8,15 +8,20 @@ require_once("lib/SessionAccess.class.php");
 
 class lib_Session
 {
-	public static function init($needkey=true)
+	/**
+	 * Start the session
+	 * @param Sync_Database $db Database connection to read account info from if the session is new
+	 * @param boolean $needkey Do we require a key to start up a new session ($_GET['key'])
+	 */
+	public static function init($db,$needkey=true)
 	{
 		MemcacheSession::Init(60); // this registers the sesion handlers, 60 = minutes till session expire
 		
 		if (!isset($_REQUEST[session_name()]))
 		{
-			if (isset($_GET['key']))
+			if (self::_isKeySet())
 			{
-				session_id($_GET['key']);
+				session_id(self::_getKey());
 				session_start();
 			}
 			else
@@ -37,10 +42,27 @@ class lib_Session
 			session_start();
 		}
 		
-		if (isset($_GET['key']))
+		if (self::_isKeySet())
 		{
-			self::_initMOSKey($_GET['key']);
+			self::_initMOSKey(self::_getKey());
 		}
+	}
+	
+	protected static function _isKeySet()
+	{
+		return isset($_GET['key']);
+	}
+	protected static function _getKey()
+	{
+		return $_GET['key'];
+	}
+	/**
+	 * @return Sync_Database
+	 */
+	protected static function _getDB()
+	{
+		require_once("Sync/Database.class.php");
+		return new Sync_Database();
 	}
 	
 	public static function reset()
@@ -50,8 +72,6 @@ class lib_Session
 	
 	protected static function _initMOSKey($key)
 	{
-		require_once("database.inc.php");
-		
 		$merchantos_sess_access = new SessionAccess("merchantos");
 		$login_sess_access = new SessionAccess("login");
 		
@@ -66,10 +86,10 @@ class lib_Session
 			$merchantos_sess_access->api_account = $_GET['account'];
 		}
 		
-		$login_sess_access->account_id = mosqb_database::writeAccount($merchantos_sess_access->api_key);
+		$login_sess_access->account_id = $db->writeAccount($merchantos_sess_access->api_key);
 		
 		// load our oauth and qb settings from db if it exists
-		$oauth_qb_arrays = mosqb_database::readOAuth($login_sess_access->account_id);
+		$oauth_qb_arrays = $db->readOAuth($login_sess_access->account_id);
 		
 		if (isset($oauth_qb_arrays['oauth']) && isset($oauth_qb_arrays['qb']) && isset($oauth_qb_arrays['renew']))
 		{
@@ -79,6 +99,8 @@ class lib_Session
 	
 	protected static function _loadOAuth($oauth_qb_arrays,$login_sess_access)
 	{
+		$db = self::_getDB();
+		
 		$oauth_sess_access = new SessionAccess("oauth");
 		$oauth_sess_access->loadArray($oauth_qb_arrays['oauth']);
 		
@@ -87,16 +109,16 @@ class lib_Session
 		
 		// load our sync settings
 		$setup_sess_access = new SessionAccess("setup");
-		$settings = mosqb_database::readSyncSetup($login_sess_access->account_id);
+		$settings = $db->readSyncSetup($login_sess_access->account_id);
 		$setup_sess_access->loadArray($settings);
 		
 		if ($oauth_qb_arrays['renew'] <= time())
 		{
-			self::_renewIntuitOAuth($oauth_sess_access,$qb_sess_access,$login_sess_access);
+			self::_renewIntuitOAuth($db,$oauth_sess_access,$qb_sess_access,$login_sess_access);
 		}
 	}
 	
-	protected static function _renewIntuitOAuth($oauth_sess_access,$qb_sess_access,$login_sess_access)
+	protected static function _renewIntuitOAuth($db,$oauth_sess_access,$qb_sess_access,$login_sess_access)
 	{
 		// time to reconnect/renew
 		require_once("IntuitAnywhere/IntuitAnywhere.class.php");
@@ -111,7 +133,7 @@ class lib_Session
 			$renew = time() + (60*60*24*30*4); // 4 months/120 days from now, to be safe (tokens last 6 months).
 			$oauth_array = $oauth_sess_access->getArray();
 			$qb_array = $qb_sess_access->getArray();
-			mosqb_database::writeOAuth($login_sess_access->account_id,array("oauth"=>$oauth_array,"qb"=>$qb_array,"renew"=>$renew));
+			$db->writeOAuth($login_sess_access->account_id,array("oauth"=>$oauth_array,"qb"=>$qb_array,"renew"=>$renew));
 		}
 	}
 }

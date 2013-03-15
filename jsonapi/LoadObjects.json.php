@@ -8,7 +8,7 @@ require_once("../config.inc.php");
 GLOBAL $_OAUTH_INTUIT_CONFIG;
 
 require_once("session.inc.php");
-require_once("database.inc.php");
+require_once("Sync/Database.class.php");
 
 $login_sess_access = new SessionAccess("login");
 
@@ -37,7 +37,8 @@ if (isset($_GET['type']))
 	$type = $_GET['type'];
 }
 
-$qb_objects = mosqb_database::readQBObjects($type,$login_sess_access->account_id,$offset,$limit);
+$db = new Sync_Database();
+$qb_objects = $db->readQBObjects($type,$login_sess_access->account_id,$offset,$limit);
 if (!$qb_objects)
 {
 	$qb_objects = array();

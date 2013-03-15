@@ -2,20 +2,39 @@
 /**
  * Database access for this sync app.
  */
-class mosqb_database {
+class Sync_Database {
 	/**
 	 * @var PDO Abstracted database access interface
 	 */
-	protected static $pdo;
+	protected $_pdo;
 	
+	/**
+	 * Construct a database wrapper object for use
+	 */
+	public function __construct()
+	{
+		if (isset($this->_pdo))
+		{
+			return;
+		}
+		//$this->_pdo = new PDO("sqlite:".MOS_QB_SYNC_DATABASE);
+		$dsn = "mysql:host=" . MOS_QB_SYNC_DATABASE_HOST . ";dbname=" . MOS_QB_SYNC_DATABASE_NAME;
+		$username = MOS_QB_SYNC_DATABASE_USERNAME;
+		$password = MOS_QB_SYNC_DATABASE_PASSWORD;
+		$options = array();
+		$this->_pdo = new PDO($dsn, $username, $password, $options);
+		
+		$this->_pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+	}
+
 	/**
 	 * See if this $api_key matches any accounts.
 	 * @param string $api_key The api_key login credential to look for.
 	 * @return null|integer The account id of the found account. Null if no account was found that matched the $api_key.
 	 */
-	public static function readAccount($api_key)
+	public function readAccount($api_key)
 	{
-		$stmt = self::$pdo->prepare("SELECT account_id FROM account WHERE api_key = :api_key");
+		$stmt = $this->_pdo->prepare("SELECT account_id FROM account WHERE api_key = :api_key");
 		if (!$stmt->execute(array("api_key"=>$api_key)))
 		{
 			return null;
@@ -33,9 +52,9 @@ class mosqb_database {
 	 * @param integer $id The account to load the apikey from
 	 * @return null|string The account api key. Null if no account was found.
 	 */
-	public static function getAPIKeyFromAccountID($id)
+	public function getAPIKeyFromAccountID($id)
 	{
-		$stmt = self::$pdo->prepare("SELECT api_key FROM account WHERE account_id = :account_id");
+		$stmt = $this->_pdo->prepare("SELECT api_key FROM account WHERE account_id = :account_id");
 		if (!$stmt->execute(array("account_id"=>$id)))
 		{
 			return null;
@@ -53,16 +72,16 @@ class mosqb_database {
 	 * @param string $api_key The api_key login credential for this new account.
 	 * @return integer The account id of the newly created account.
 	 */
-	public static function writeAccount($api_key)
+	public function writeAccount($api_key)
 	{
-		$stmt = self::$pdo->prepare("INSERT INTO account (api_key) VALUES (:api_key)");
+		$stmt = $this->_pdo->prepare("INSERT INTO account (api_key) VALUES (:api_key)");
 		try
 		{
 			if (!$stmt->execute(array("api_key"=>$api_key)))
 			{
 				throw new Exception("Could not load or create account.");
 			}
-			return self::$pdo->lastInsertId();
+			return $this->_pdo->lastInsertId();
 		}
 		catch (Exception $e)
 		{
@@ -74,7 +93,7 @@ class mosqb_database {
 			}
 		}
 		// is duplicate so just read
-		return self::readAccount($api_key);
+		return $this->readAccount($api_key);
 	}
 	
 	/**
@@ -82,11 +101,11 @@ class mosqb_database {
 	 * @param integer $account_id The id of the account
 	 * @return array Unserialized array of oauth data.
 	 */
-	public static function readOAuth($account_id)
+	public function readOAuth($account_id)
 	{
 		$account_id = (integer)$account_id;
 		$sql = "SELECT phpserialized FROM oauth WHERE account_id = $account_id";
-		$pdoresult = self::$pdo->query($sql);
+		$pdoresult = $this->_pdo->query($sql);
 		if (!$pdoresult)
 		{
 			return array();
@@ -104,11 +123,11 @@ class mosqb_database {
 	 * @param integer $account_id The id of the account
 	 * @param array $oauth_data_array Serializable array of oauth data.
 	 */
-	public static function writeOAuth($account_id,$oauth_data_array)
+	public function writeOAuth($account_id,$oauth_data_array)
 	{
 		$account_id = (integer)$account_id;
 		$oauth_serialized = serialize($oauth_data_array);
-		$stmt = self::$pdo->prepare("REPLACE INTO oauth (account_id,phpserialized) VALUES (:account_id, :oauth)");
+		$stmt = $this->_pdo->prepare("REPLACE INTO oauth (account_id,phpserialized) VALUES (:account_id, :oauth)");
 		$stmt->execute(array(":account_id"=>$account_id,":oauth"=>$oauth_serialized));
 	}
 	
@@ -116,10 +135,10 @@ class mosqb_database {
 	 * Delete all OAuth info for this account.
 	 * @param integer $account_id The id of the account
 	 */
-	public static function deleteOAuth($account_id)
+	public function deleteOAuth($account_id)
 	{
 		$account_id = (integer)$account_id;
-		$stmt = self::$pdo->prepare("DELETE FROM oauth WHERE account_id=:account_id");
+		$stmt = $this->_pdo->prepare("DELETE FROM oauth WHERE account_id=:account_id");
 		$stmt->execute(array(":account_id"=>$account_id));
 	}
 	
@@ -131,10 +150,10 @@ class mosqb_database {
 	 *  "<setting name>" => <setting value>|mixed (any serializable value)
 	 * )
 	 */
-	public static function readSyncSetup($account_id)
+	public function readSyncSetup($account_id)
 	{
 		$sql = "SELECT name,value FROM sync_setup WHERE account_id = $account_id";
-		$pdoresult = self::$pdo->query($sql);
+		$pdoresult = $this->_pdo->query($sql);
 		if (!$pdoresult)
 		{
 			return array();
@@ -167,10 +186,10 @@ class mosqb_database {
 	 *  "<setting name>" => "<setting value>"
 	 * )
 	 */
-	public static function writeSyncSetup($account_id,$setup_values)
+	public function writeSyncSetup($account_id,$setup_values)
 	{
 		$account_id = (integer)$account_id;
-		$stmt = self::$pdo->prepare("REPLACE INTO sync_setup (account_id,name,value) VALUES (:account_id, :name, :value)");
+		$stmt = $this->_pdo->prepare("REPLACE INTO sync_setup (account_id,name,value) VALUES (:account_id, :name, :value)");
 		foreach ($setup_values as $name=>$value)
 		{
 			if (is_array($value) || is_object($value))
@@ -186,10 +205,10 @@ class mosqb_database {
 	 * Delete all settings for this account.
 	 * @param integer $account_id The id of the account
 	 */
-	public static function deleteSyncSetup($account_id)
+	public function deleteSyncSetup($account_id)
 	{
 		$account_id = (integer)$account_id;
-		$stmt = self::$pdo->prepare("DELETE FROM sync_setup WHERE account_id=:account_id");
+		$stmt = $this->_pdo->prepare("DELETE FROM sync_setup WHERE account_id=:account_id");
 		$stmt->execute(array(":account_id"=>$account_id));
 	}
 	
@@ -199,7 +218,7 @@ class mosqb_database {
 	 * @param integer $account_id The id of the account to check log messages for
 	 * @return DateTime The date of the last successful sync.
 	 */
-	public static function getLastSuccessfulDataDate($type,$account_id)
+	public function getLastSuccessfulDataDate($type,$account_id)
 	{
 		$account_id = (integer)$account_id;
 		$extra_where = "";
@@ -208,7 +227,7 @@ class mosqb_database {
 			$extra_where .= "AND type LIKE '$type'";
 		}
 		$sql = "SELECT data_date FROM account_log WHERE account_id = $account_id AND success=1 $extra_where ORDER BY data_date DESC LIMIT 1";
-		$pdoresult = self::$pdo->query($sql);
+		$pdoresult = $this->_pdo->query($sql);
 		if (!$pdoresult)
 		{
 			return null;
@@ -231,7 +250,7 @@ class mosqb_database {
 	 * @param DateTime $end End of the date range to check.
 	 * @return boolean Did we have a successful sync durring date range?
 	 */
-	public static function hasSyncSuccessDurring($type,$account_id,$start,$end)
+	public function hasSyncSuccessDurring($type,$account_id,$start,$end)
 	{
 		$start = (integer)$start->format("U");
 		$end = (integer)$end->format("U");
@@ -242,7 +261,7 @@ class mosqb_database {
 			$extra_where .= "AND type LIKE '$type'";
 		}
 		$sql = "SELECT count(*) as num FROM account_log WHERE account_id = $account_id AND success=1 AND data_date >= $start AND data_date <= $end $extra_where";
-		$pdoresult = self::$pdo->query($sql);
+		$pdoresult = $this->_pdo->query($sql);
 		if (!$pdoresult)
 		{
 			return false;
@@ -276,7 +295,7 @@ class mosqb_database {
 	 *  'alert'=>0/1 is this an alert.
 	 * )
 	 */
-	public static function readAccountLog($type,$account_id,$offset=0,$limit=20,$alerts_only=false)
+	public function readAccountLog($type,$account_id,$offset=0,$limit=20,$alerts_only=false)
 	{
 		$offset = (integer)$offset;
 		$limit = (integer)$limit;
@@ -296,7 +315,7 @@ class mosqb_database {
 			$extra_where .= " AND type LIKE '$type'";
 		}
 		$sql = "SELECT account_log_id,UNIX_TIMESTAMP(time_stamp) as insert_time,data_date,success,msg,alert,type FROM account_log WHERE account_id = $account_id $extra_where ORDER BY time_stamp DESC LIMIT $offset,$limit";
-		$pdoresult = self::$pdo->query($sql);
+		$pdoresult = $this->_pdo->query($sql);
 		if (!$pdoresult)
 		{
 			return array();
@@ -342,10 +361,10 @@ class mosqb_database {
 	 * 	"type"=>one of: 'sales', 'cogs', 'orders', 'msg'
 	 * )
 	 */
-	public static function writeAccountLogEntries($account_id,$log_entries)
+	public function writeAccountLogEntries($account_id,$log_entries)
 	{
 		$account_id = (integer)$account_id;
-		$stmt = self::$pdo->prepare("INSERT INTO account_log (account_id,data_date,success,msg,alert,type) VALUES (:account_id, :data_date, :success, :msg, :alert, :type)");
+		$stmt = $this->_pdo->prepare("INSERT INTO account_log (account_id,data_date,success,msg,alert,type) VALUES (:account_id, :data_date, :success, :msg, :alert, :type)");
 		foreach ($log_entries as $entry)
 		{
 			$msg = $entry['msg'];
@@ -378,10 +397,10 @@ class mosqb_database {
 	 * 	"type"=>"The object type in QB."
 	 * )
 	 */
-	public static function writeQBObjects($account_id,$qb_objects)
+	public function writeQBObjects($account_id,$qb_objects)
 	{
 		$account_id = (integer)$account_id;
-		$stmt = self::$pdo->prepare("REPLACE INTO qb_object (account_id,object_id,type) VALUES (:account_id, :object_id, :type)");
+		$stmt = $this->_pdo->prepare("REPLACE INTO qb_object (account_id,object_id,type) VALUES (:account_id, :object_id, :type)");
 		foreach ($qb_objects as $qb_obj)
 		{
 			$type = $qb_obj['type'];
@@ -397,12 +416,12 @@ class mosqb_database {
 	 * @param integer $type The type of the object
 	 * @return boolean True if the object is deleted, false otherwise.
 	 */
-	public static function deleteQBObject($account_id,$type,$id)
+	public function deleteQBObject($account_id,$type,$id)
 	{
 		$id = (integer)$id;
 		$account_id = (integer)$account_id;
 		
-		$stmt = self::$pdo->prepare("DELETE FROM qb_object WHERE account_id = :account_id AND object_id = :id AND type = :type");
+		$stmt = $this->_pdo->prepare("DELETE FROM qb_object WHERE account_id = :account_id AND object_id = :id AND type = :type");
 		if (!$stmt->execute(array("account_id"=>$account_id,"id"=>$id,"type"=>$type)))
 		{
 			return false;
@@ -427,7 +446,7 @@ class mosqb_database {
 	 *  'insert_time'=>timestamp for when this log entry was created.
 	 * )
 	 */
-	public static function readQBObjects($type,$account_id,$offset=0,$limit=20)
+	public function readQBObjects($type,$account_id,$offset=0,$limit=20)
 	{
 		$offset = (integer)$offset;
 		$limit = (integer)$limit;
@@ -439,7 +458,7 @@ class mosqb_database {
 			$extra_where .= " AND type LIKE :type";
 			$binds[':type'] = $type;
 		}
-		$stmt = self::$pdo->prepare("SELECT object_id, UNIX_TIMESTAMP(time_stamp) as insert_time, type FROM qb_object WHERE account_id = $account_id $extra_where ORDER BY time_stamp DESC LIMIT $offset,$limit");
+		$stmt = $this->_pdo->prepare("SELECT object_id, UNIX_TIMESTAMP(time_stamp) as insert_time, type FROM qb_object WHERE account_id = $account_id $extra_where ORDER BY time_stamp DESC LIMIT $offset,$limit");
 		if (!$stmt->execute($binds))
 		{
 			return array();
@@ -466,12 +485,12 @@ class mosqb_database {
 	 * @param integer $account_id The id of the account the log entry belongs to
 	 * @param integer $account_log_id The id of the alert log entry to dismiss
 	 */
-	public static function dismissAlert($account_id,$account_log_id)
+	public function dismissAlert($account_id,$account_log_id)
 	{
 		$account_log_id = (integer)$account_log_id;
 		$account_id = (integer)$account_id;
 		$sql = "UPDATE account_log SET alert=0 WHERE account_log_id = $account_log_id AND account_id = $account_id";
-		self::$pdo->query($sql);
+		$this->_pdo->query($sql);
 	}
 	
 	/**
@@ -479,46 +498,27 @@ class mosqb_database {
 	 * @param integer $account_id The id of the account the log entry belongs to
 	 * @param integer $account_log_id The id of the log entry to delete
 	 */
-	public static function deleteAccountLogEntry($account_id,$account_log_id)
+	public function deleteAccountLogEntry($account_id,$account_log_id)
 	{
 		$account_log_id = (integer)$account_log_id;
 		$account_id = (integer)$account_id;
 		$sql = "DELETE FROM account_log WHERE account_log_id = $account_log_id AND account_id = $account_id";
-		self::$pdo->query($sql);
+		$this->_pdo->query($sql);
 	}
 	
-	/**
-	 * Creates the static singleton for this class that the static methods will use. Called at the bottom of this file so don't need to worry about this.
-	 */
-	public static function init()
-	{
-		if (isset(self::$pdo))
-		{
-			return;
-		}
-		//self::$pdo = new PDO("sqlite:".MOS_QB_SYNC_DATABASE);
-		$dsn = "mysql:host=" . MOS_QB_SYNC_DATABASE_HOST . ";dbname=" . MOS_QB_SYNC_DATABASE_NAME;
-		$username = MOS_QB_SYNC_DATABASE_USERNAME;
-		$password = MOS_QB_SYNC_DATABASE_PASSWORD;
-		$options = array();
-		self::$pdo = new PDO($dsn, $username, $password, $options);
-		
-		self::$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-	}
-
 	/**
 	 * Create the database tables if they do not exist. Just used to intially create the database for this sync app.
 	 * @return boolean Success
 	 */
-	public static function checkSetup()
+	public function checkSetup()
 	{
 		// see if our tables are here
 		$sql = "SHOW TABLES";
-		$pdoresult = self::$pdo->query($sql);
+		$pdoresult = $this->_pdo->query($sql);
 		if (!$pdoresult)
 		{
 			// we are not setup
-			self::_doAllSetup();
+			$this->_doAllSetup();
 			return true;
 		}
 		$already_setup_tables = array();
@@ -528,37 +528,37 @@ class mosqb_database {
 		}
 		if (array_search("account",$already_setup_tables)===false)
 		{
-			self::_doSetupAccount();
+			$this->_doSetupAccount();
 		}
 		if (array_search("oauth",$already_setup_tables)===false)
 		{
-			self::_doSetupOAuth();
+			$this->_doSetupOAuth();
 		}
 		if (array_search("sync_setup",$already_setup_tables)===false)
 		{
-			self::_doSetupSyncSetup();
+			$this->_doSetupSyncSetup();
 		}
 		if (array_search("account_log",$already_setup_tables)===false)
 		{
-			self::_doSetupAccountLog();
+			$this->_doSetupAccountLog();
 		}
 		if (array_search("qb_object",$already_setup_tables)===false)
 		{
-			self::_doSetupQBObject();
+			$this->_doSetupQBObject();
 		}
 		return true;
 	}
 	
-	protected static function _doAllSetup()
+	protected function _doAllSetup()
 	{
-		self::_doSetupAccount();
-		self::_doSetupOAuth();
-		self::_doSetupSyncSetup();
-		self::_doSetupLog();
-		self::_doSetupQBObject();
+		$this->_doSetupAccount();
+		$this->_doSetupOAuth();
+		$this->_doSetupSyncSetup();
+		$this->_doSetupLog();
+		$this->_doSetupQBObject();
 	}
 	
-	protected static function _doSetupAccount()
+	protected function _doSetupAccount()
 	{
 		$fields = array(
 			//fields
@@ -567,11 +567,11 @@ class mosqb_database {
 			// keys
 			"uniques"=>array("api_key"=>"api_key"), // each api_key is unique
 		);
-		$sql = self::_getTableCreateSQL("account",$fields);
-		self::$pdo->query($sql);
+		$sql = $this->_getTableCreateSQL("account",$fields);
+		$this->_pdo->query($sql);
 	}
 	
-	protected static function _doSetupOAuth()
+	protected function _doSetupOAuth()
 	{
 		$fields = array(
 			//fields
@@ -580,11 +580,11 @@ class mosqb_database {
 			"phpserialized"=>"text",
 			"uniques"=>array("account_id"=>"account_id"), // only one oauth per account
 		);
-		$sql = self::_getTableCreateSQL("oauth",$fields);
-		self::$pdo->query($sql);
+		$sql = $this->_getTableCreateSQL("oauth",$fields);
+		$this->_pdo->query($sql);
 	}
 	
-	protected static function _doSetupSyncSetup()
+	protected function _doSetupSyncSetup()
 	{
 		$fields = array(
 			//fields
@@ -595,11 +595,11 @@ class mosqb_database {
 			// keys
 			"uniques"=>array("account_id_name"=>array("account_id","name")), // only one setup variable per "name" per account
 		);
-		$sql = self::_getTableCreateSQL("sync_setup",$fields);
-		self::$pdo->query($sql);
+		$sql = $this->_getTableCreateSQL("sync_setup",$fields);
+		$this->_pdo->query($sql);
 	}
 	
-	protected static function _doSetupAccountLog()
+	protected function _doSetupAccountLog()
 	{
 		$fields = array(
 			//fields
@@ -614,11 +614,11 @@ class mosqb_database {
 			// keys
 			"keys"=>array("time_stamp"=>"time_stamp","data_date"=>"data_date")
 		);
-		$sql = self::_getTableCreateSQL("account_log",$fields);
-		self::$pdo->query($sql);
+		$sql = $this->_getTableCreateSQL("account_log",$fields);
+		$this->_pdo->query($sql);
 	}
 	
-	protected static function _doSetupQBObject()
+	protected function _doSetupQBObject()
 	{
 		$fields = array(
 			//fields
@@ -631,11 +631,11 @@ class mosqb_database {
 			"uniques"=>array("account_type_id"=>array("account_id","type","object_id")), // only one object of a certain id and type per account
 			"keys"=>array("time_stamp"=>"time_stamp")
 		);
-		$sql = self::_getTableCreateSQL("qb_object",$fields);
-		self::$pdo->query($sql);
+		$sql = $this->_getTableCreateSQL("qb_object",$fields);
+		$this->_pdo->query($sql);
 	}
 	
-	protected static function _getTableCreateSQL($tablename,$fields)
+	protected function _getTableCreateSQL($tablename,$fields)
 	{
 		$field_sqls = array();
 		$key_sqls = array();
@@ -703,5 +703,3 @@ class mosqb_database {
 		return "CREATE TABLE `$tablename` (" . join(", ",$lines) . ") ENGINE=MyISAM";
 	}
 }
-
-mosqb_database::init();

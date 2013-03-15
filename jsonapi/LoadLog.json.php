@@ -4,7 +4,7 @@ require_once("../config.inc.php");
 GLOBAL $_OAUTH_INTUIT_CONFIG;
 
 require_once("session.inc.php");
-require_once("database.inc.php");
+require_once("Sync/Database.class.php");
 
 $login_sess_access = new SessionAccess("login");
 
@@ -39,7 +39,8 @@ if (isset($_GET['type']))
 	$TYPE = $_GET['type'];
 }
 
-$log_msgs = mosqb_database::readAccountLog($type,$login_sess_access->account_id,$offset,$limit,$alerts);
+$db = new Sync_Database();
+$log_msgs = $db->readAccountLog($type,$login_sess_access->account_id,$offset,$limit,$alerts);
 if (!$log_msgs)
 {
 	$log_msgs = array();

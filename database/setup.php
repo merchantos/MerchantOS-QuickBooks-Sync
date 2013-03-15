@@ -3,6 +3,7 @@
 require_once("../config.inc.php");
 GLOBAL $_OAUTH_INTUIT_CONFIG;
 
-require_once("database.inc.php");
+require_once("Sync/Database.class.php");
 
-mosqb_database::checkSetup();
+$db = new Sync_Database();
+$db->checkSetup();

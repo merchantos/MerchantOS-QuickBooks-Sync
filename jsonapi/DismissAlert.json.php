@@ -4,7 +4,7 @@ require_once("../config.inc.php");
 GLOBAL $_OAUTH_INTUIT_CONFIG;
 
 require_once("session.inc.php");
-require_once("database.inc.php");
+require_once("Sync/Database.class.php");
 
 $login_sess_access = new SessionAccess("login");
 
@@ -19,6 +19,7 @@ function returnOutput($output)
 	return $output;
 }
 
-mosqb_database::dismissAlert($login_sess_access->account_id,$_GET['account_log_id']);
+$db = new Sync_Database();
+$db->dismissAlert($login_sess_access->account_id,$_GET['account_log_id']);
 
 echo returnOutput("{\"success\":true}");

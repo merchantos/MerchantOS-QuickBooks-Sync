@@ -1,7 +1,6 @@
 <?php
 
 require_once("session.inc.php");
-require_once("database.inc.php");
 
 require_once("IntuitAnywhere/IntuitAnywhere.class.php");
 
@@ -19,8 +18,18 @@ class Sync_SyncRunner
 	protected $_account_id;
 	protected $_mos_apikey;
 	
-	public function __construct($account_id)
+	/**
+	 * @var Sync_Database
+	 */
+	protected $_db;
+	
+	/**
+	 * @param Sync_Database $db Access to our database.
+	 * @param integer $account_id The account that we are going to sync.
+	 */
+	public function __construct($db,$account_id)
 	{
+		$this->_db = $db;
 		$this->_account_id = $account_id;
 	}
 	
@@ -36,9 +45,9 @@ class Sync_SyncRunner
 	
 	public function initFromDatabase()
 	{
-		$this->_account_setup = mosqb_database::readSyncSetup($this->_account_id);
+		$this->_account_setup = $db->readSyncSetup($this->_account_id);
 		
-		$oauth_qb_arrays = mosqb_database::readOAuth($this->_account_id);
+		$oauth_qb_arrays = $db->readOAuth($this->_account_id);
 		if (!isset($oauth_qb_arrays['qb']) || !isset($oauth_qb_arrays['oauth']))
 		{
 			throw new Exception("IntuitAnywhere OAuth account setup is incomplete.");
@@ -46,7 +55,7 @@ class Sync_SyncRunner
 		$this->_qb_setup = (object)$oauth_qb_arrays['qb'];
 		$this->_oauth_setup = (object)$oauth_qb_arrays['oauth'];
 		
-		$this->_mos_apikey = mosqb_databasegetAPIKeyFromAccountID($this->_account_id);
+		$this->_mos_apikey = $db->getAPIKeyFromAccountID($this->_account_id);
 	}
 	
 	protected function _getIntuitAnywhereAccess()
@@ -129,7 +138,7 @@ class Sync_SyncRunner
 			$sales_start_date = new DateTime($setup_sess_access->start_date);
 			
 			// we need to get the last date synced and if start_date is <= then set it to that plus 1 day
-			$last_success_date = mosqb_database::getLastSuccessfulDataDate($log_test_type,$account_id);
+			$last_success_date = $db->getLastSuccessfulDataDate($log_test_type,$account_id);
 			if ($last_success_date)
 			{
 				$sales_start_date = new DateTime($last_success_date->format('c') . ' + 1 day');
@@ -149,7 +158,7 @@ class Sync_SyncRunner
 				$sales_end_date = $one_date;
 			}
 			
-			if (mosqb_database::hasSyncSuccessDurring($log_test_type,$account_id,$sales_start_date,$sales_end_date))
+			if ($db->hasSyncSuccessDurring($log_test_type,$account_id,$sales_start_date,$sales_end_date))
 			{
 				throw new Exception("Date range has already been synced.");
 			}
@@ -168,9 +177,9 @@ class Sync_SyncRunner
 				if (isset($resync_account_log_id))
 				{
 					// delete the log entries for the previous sync of this day if we are doing a resync
-					mosqb_database::deleteAccountLogEntry($account_id,$resync_account_log_id);
+					$db->deleteAccountLogEntry($account_id,$resync_account_log_id);
 				}
-				mosqb_database::writeAccountLogEntries($account_id,$sales_log);
+				$db->writeAccountLogEntries($account_id,$sales_log);
 			}
 		}
 		
@@ -181,7 +190,7 @@ class Sync_SyncRunner
 			$orders_start_date = new DateTime($setup_sess_access->start_date);
 			
 			// we need to get the last date synced and if start_date is <= then set it to that plus 1 day
-			$last_success_date = mosqb_database::getLastSuccessfulDataDate('orders',$account_id);
+			$last_success_date = $db->getLastSuccessfulDataDate('orders',$account_id);
 			if ($last_success_date)
 			{
 				$orders_start_date = new DateTime($last_success_date->format('c') . ' + 1 day');
@@ -201,7 +210,7 @@ class Sync_SyncRunner
 				$orders_end_date = $one_date;
 			}
 			
-			if (mosqb_database::hasSyncSuccessDurring('orders',$account_id,$orders_start_date,$orders_end_date))
+			if ($db->hasSyncSuccessDurring('orders',$account_id,$orders_start_date,$orders_end_date))
 			{
 				throw new Exception("Date range has already been synced.");
 			}
@@ -220,14 +229,14 @@ class Sync_SyncRunner
 				if (isset($resync_account_log_id))
 				{
 					// delete the log entries for the previous sync of this day if we are doing a resync
-					mosqb_database::deleteAccountLogEntry($account_id,$resync_account_log_id);
+					$db->deleteAccountLogEntry($account_id,$resync_account_log_id);
 				}
-				mosqb_database::writeAccountLogEntries($account_id,$orders_log);
+				$db->writeAccountLogEntries($account_id,$orders_log);
 			}
 		}
 		
 		// record all the objects that got created, useful because we might change how things are synced in future, also we might want to do do something like add a way to delete stuff that was created to clean up a bad sync etc
-		mosqb_database::writeQBObjects($account_id,$mosqb_sync->getObjectsWritten());
+		$db->writeQBObjects($account_id,$mosqb_sync->getObjectsWritten());
 	}
 	
 	protected function _setType($mosqb_sync,$type="all")

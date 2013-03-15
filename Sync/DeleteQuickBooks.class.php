@@ -1,16 +1,31 @@
 <?php
 
-require_once("database.inc.php");
+require_once("Sync/Database.class.php");
 
+/**
+ * Sync_DeleteQuickBooks: Delete data from quickbooks that was put there by this Sync app.
+ *
+ * @package  Sync
+ * @author   Justin Laing <justin@merchantos.com>
+ */
 class Sync_DeleteQuickBooks {
 	/**
 	 * @var IntuitAnywhere
 	 */
-	protected $_i_anywhere;
+	protected $_ia;
+	/**
+	 * @var Sync_Database
+	 */
+	protected $_db;
 	
-	public function __construct($i_anywhere)
+	/**
+	 * @param IntuitAnywhere IntuitAnywhere API access so we can delete objects
+	 * @param Sync_Database Database access so we delete our reference to the object
+	 * @return Sync_DeleteQuickBooks
+	 */
+	public function __construct($ianywhere,$db)
 	{
-		$this->_i_anywhere = $i_anywhere;
+		$this->_ia = $ianywhere;
 	}
 	
 	/**
@@ -60,7 +75,7 @@ class Sync_DeleteQuickBooks {
 		// delete from QB
 		require_once("IntuitAnywhere/" . $safetype . ".class.php");
 		$iaclassname = "IntuitAnywhere_".$safetype;
-		$ia_data_obj = new $iaclassname($this->_i_anywhere);
+		$ia_data_obj = new $iaclassname($this->_ia);
 		$ia_data_obj->Id = $id;
 		
 		if (!$ia_data_obj->delete())
@@ -69,7 +84,7 @@ class Sync_DeleteQuickBooks {
 		}
 		
 		// delete from database log of objects
-		if (!mosqb_database::deleteQBObject($account_id,$type,$id))
+		if (!$db->deleteQBObject($account_id,$type,$id))
 		{
 			throw new Exception("Could not delete object log entry for $safetype with Id of $id.");
 		}

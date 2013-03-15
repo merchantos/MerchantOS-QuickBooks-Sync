@@ -22,8 +22,9 @@ function returnOutput($output)
 $settings = $setup_sess_access->getArray();
 if (!$settings)
 {
-	require_once("database.inc.php");
-	$settings = mosqb_database::readSyncSetup($login_sess_access->account_id);
+	require_once("Sync/Database.class.php");
+	$db = new Sync_Database();
+	$settings = $db->readSyncSetup($login_sess_access->account_id);
 	$setup_sess_access->loadArray($settings);
 }
 if (!$settings)

@@ -4,7 +4,7 @@ include_once("config.inc.php");
 GLOBAL $_OAUTH_INTUIT_CONFIG;
 
 require_once("session.inc.php");
-require_once("database.inc.php");
+require_once("Sync/Database.class.php");
 
 require_once("IntuitAnywhere/IntuitAnywhere.class.php");
 
@@ -17,8 +17,9 @@ $ianywhere = new IntuitAnywhere($qb_sess_access);
 $ianywhere->initOAuth($oauth_sess_access,INTUIT_DISPLAY_NAME,INTUIT_CALLBACK_URL,$_OAUTH_INTUIT_CONFIG,false); // false = not interactive, fail if OAuth needs authorization
 $ianywhere->disconnect();
 
-mosqb_database::deleteOAuth($login_sess_access->account_id);
-mosqb_database::deleteSyncSetup($login_sess_access->account_id);
+$db = new Sync_Database();
+$db->deleteOAuth($login_sess_access->account_id);
+$db->deleteSyncSetup($login_sess_access->account_id);
 
 $oauth_sess_access->clear();
 $qb_sess_access->clear();
