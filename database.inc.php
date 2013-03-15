@@ -29,6 +29,26 @@ class mosqb_database {
 	}
 	
 	/**
+	 * Get a merchantos API key for the given account id
+	 * @param integer $id The account to load the apikey from
+	 * @return null|string The account api key. Null if no account was found.
+	 */
+	public static function getAPIKeyFromAccountID($id)
+	{
+		$stmt = self::$pdo->prepare("SELECT api_key FROM account WHERE account_id = :account_id");
+		if (!$stmt->execute(array("account_id"=>$id)))
+		{
+			return null;
+		}
+		$rows = $stmt->fetchAll();
+		if (count($rows)!==1)
+		{
+			return null;
+		}
+		return $rows[0]['api_key'];
+	}
+	
+	/**
 	 * Create a new account based using $api_key as the login credential.
 	 * @param string $api_key The api_key login credential for this new account.
 	 * @return integer The account id of the newly created account.

@@ -5,20 +5,29 @@ require_once("lib/Airbrake.class.php");
  */
 class helpers_Errors
 {
+	protected static $_isSetup = false;
+	
+	public static function isSetup()
+	{
+		return self::$_isSetup;
+	}
+	
 	public function setup()
 	{
+		self::$_isSetup = true;
+		
 		if (DEVELOPMENT_STACK and SHOW_NOTICE)
 		{
-			set_error_handler(array($this,'nonfatalHandler'),E_ALL);
+			set_error_handler('helpers_Errors::nonfatalHandler',E_ALL);
 		}
 		else
 		{
-			set_error_handler(array($this,"nonfatalHandler"),E_ALL & ~E_NOTICE & ~E_WARNING);
+			set_error_handler("helpers_Errors::nonfatalHandler",E_ALL & ~E_NOTICE & ~E_WARNING);
 		}
-		set_exception_handler(array($this,"exceptionHandler"));
+		set_exception_handler("helpers_Errors::exceptionHandler");
 	}
 	
-	public function nonfatalHandler($type,$msg,$file,$line)
+	public static function nonfatalHandler($type,$msg,$file,$line)
 	{
 		if (error_reporting()==0) // error_reporting==0 if the statement has an @, so we don't want to mess with those errors
 		{
@@ -58,19 +67,19 @@ class helpers_Errors
 		}
 		catch (Exception $e)
 		{
-			$this->logError("Failed to log error within Airbrake.");
+			self::_logError("Failed to log error within Airbrake.");
 		}
 		
-		$this->logError("PHP Error ($type): $msg in $file on $line.");
+		self::_logError("PHP Error ($type): $msg in $file on $line.");
 	   
 		ob_end_clean();
 		
-		echo $this->_display($type,$msg,$file,$line);
+		echo self::_display($type,$msg,$file,$line);
 		
 		exit(0);
 	}
 	
-	public function exceptionHandler($exception)
+	public static function exceptionHandler($exception)
 	{
 		try
 		{
@@ -86,14 +95,14 @@ class helpers_Errors
 			}
 			catch (Exception $e)
 			{
-				$this->logError("Failed to log error within Airbrake.");
+				self::_logError("Failed to log error within Airbrake.");
 			}
 			
-			$this->logError("PHP Exception: $msg in $file on $line.");
+			self::_logError("PHP Exception: $msg in $file on $line.");
 			
 			ob_end_clean();
 			
-			echo $this->_display($type,$msg,$file,$line);
+			echo self::_display($type,$msg,$file,$line);
 		}
 		catch (Exception $e)
 		{
@@ -102,7 +111,7 @@ class helpers_Errors
 		exit(0);
 	}
 	
-	public function fatalHandler()
+	public static function fatalHandler()
 	{
 		$error = error_get_last();
 		if (!$error)
@@ -135,24 +144,24 @@ class helpers_Errors
 		}
 		catch (Exception $e)
 		{
-			$this->logError("Failed to log error within Airbrake.");
+			self::_logError("Failed to log error within Airbrake.");
 		}
 		
-		$this->logError("PHP Error ($type): $msg in $file on $line.");
+		self::_logError("PHP Error ($type): $msg in $file on $line.");
 		
-		return $this->_display($type,$msg,$file,$line);
+		return self::_display($type,$msg,$file,$line);
 	}
 	
-	public function logError($msg)
+	protected static function _logError($msg)
 	{
 		error_log(APPLICATION_NAME . ": " . $msg,0);
 	}
 	
-	protected function _display($type,$msg,$file,$line)
+	protected static function _display($type,$msg,$file,$line)
 	{
 		if (defined('DISPLAY_ALL_ERRORS') && DISPLAY_ALL_ERRORS)
 		{
-			if ($this->_isJSON())
+			if (self::_isJSON())
 			{
 				return '{"error":"Error ['.$type.']: '.htmlentities($msg,ENT_QUOTES).' in '.$file.' on line '.$line.'"}';
 			}
@@ -165,7 +174,7 @@ class helpers_Errors
 		
 		$message = "An error has occured and MerchantOS has been notified. Please try again and if this problem continues please call support at (866) 554-2453.";
 		
-		if ($this->_isJSON())
+		if (self::_isJSON())
 		{
 			if (!defined("MERCHANTOS_ERROR"))
 			{
@@ -178,7 +187,7 @@ class helpers_Errors
 		}
 	}
 	
-	protected function _isJSON()
+	protected static function _isJSON()
 	{
 		$headers = getallheaders();
 		foreach ($headers as $key=>$value)

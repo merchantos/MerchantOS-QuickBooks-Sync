@@ -1,4 +1,4 @@
-<div id="loading"><img src="images/loading.gif" height="16" width="16" border="0"> loading your data...</div>
+<div id="loading"><img src="assets/images/loading.gif" height="16" width="16" border="0"> loading your data...</div>
 <div id="errors" style="display: none;">
 	<ul></ul>
 	<button>Close</button>

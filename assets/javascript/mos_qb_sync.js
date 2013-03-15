@@ -395,7 +395,9 @@ mosqb = {
 
 $(document).ready(function() {
 	var active_section = $("section.selected").attr('id');
-	mosqb[active_section].init();
+	if (active_section) {
+		mosqb[active_section].init();
+	}
 
 	$("a[href='#settings']").click(function() {
 		mosqb.sections.activate('settings');
@@ -418,7 +420,7 @@ $(document).ready(function() {
 		});
 	});
 	
-	$("a[href='#re-sync-day']").live("click",function () {
+	$(document).on("click","a[href='#re-sync-day']",function () {
 		var date = $(this).attr("rday");
 		var type = $(this).attr("rtype");
 		var account_log_id = $(this).attr("account_log_id");
@@ -430,17 +432,34 @@ $(document).ready(function() {
 		});
 	});
 	
-	$("a[href='#dismiss-alert']").live("click",function () {
+	$(document).on("click","a[href='#dismiss-alert']",function () {
 		mosqb.dashboard.dismissAlert(this);
 	});
 	
-	$("a[href='#delete-object']").live("click",function () {
+	$(document).on("click","a[href='#delete-alert']",function () {
 		mosqb.objects.deleteObject(this);
 	});
 	
 	$("#errors button").click(function () {
 		$("#errors ul li").remove();
 		$("#errors").hide();
+	});
+	
+	$("#signup").submit(function() {
+		$.ajax({
+			type: "POST",
+			url: "jsonapi/SaveAccountCreationDetails.json.php",
+			data: $("#signup").serialize(), // serializes the form's elements.
+			success: function(data) {
+				if (data.success) {
+					intuit.ipp.anywhere.directConnectToIntuit();
+				}
+				if (data.error) {
+					mosqb.error(result.error);
+				}
+			}
+		});
+		return false;
 	});
 });
 

@@ -14,10 +14,14 @@ class MerchantOS_Account
 		$this->_mosapi = new MOSAPICall($apikey,$account_num);
 	}
 	
-	function create($account_name,$email,$phone,$password)
+	function create($account_name,$email,$firstName,$lastName,$phone,$password)
 	{
-	    // @todo - are these values sanitized already?
-	    
+		$employee = "";
+		if (strlen(trim($firstName))>0 || strlen(trim($lastName))>0)
+		{
+			$employee = "<Employee><firstName>" . htmlentities($firstName) . "</firstName><lastName>" . htmlentities($lastName) . "</lastName></Employee>";
+		}
+		
 	    $xml = "<SystemCustomer>
     <name>".htmlentities($account_name)."</name>
 	<promotionCode>QuickBooks</promotionCode>
@@ -28,6 +32,7 @@ class MerchantOS_Account
     <SystemUsers>
         <SystemUser>
             <pwd>".htmlentities($password)."</pwd>
+			$employee
         </SystemUser>
     </SystemUsers>
 </SystemCustomer>";
