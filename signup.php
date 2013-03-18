@@ -7,7 +7,7 @@ require_once("session.inc.php");
 require_once("session.inc.php");
 require_once("Sync/Database.class.php");
 */
-require_once("view.inc.php");
+require_once("Views/Render.class.php");
 $login_sess_access = new SessionAccess("login");
 
 if (isset($login_sess_access->account_id) && $login_sess_access->account_id>0)
@@ -27,4 +27,4 @@ $login_sess_access->account_creation_first_name = $firstName;
 $login_sess_access->account_creation_last_name = $lastName;
 $login_sess_access->account_creation_openid = $openid;
 
-render_view('signupform', $locals = array('email' => $email, 'openid_login_url' => MOS_OPENID_URL, 'no_title'=>true));
+views_Render::renderView('signupform', $locals = array('email' => $email, 'openid_login_url' => MOS_OPENID_URL, 'no_title'=>true));

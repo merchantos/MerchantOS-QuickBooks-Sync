@@ -1,10 +1,10 @@
 <?php
 
 require_once("config.inc.php");
-require_once("view.inc.php");
 
 GLOBAL $_OAUTH_INTUIT_CONFIG;
 
+require_once("Views/Render.class.php");
 require_once("session.inc.php");
 
 require_once("IntuitAnywhere/IntuitAnywhere.class.php");
@@ -44,4 +44,4 @@ if ($ianywhere->isUserAuthorized())
 	}
 }
 
-render_view('settings', $locals = array('is_authorized' => $is_authorized, 'is_setup' => $is_setup, 'merchantos_sess_access' => $merchantos_sess_access, 'ianywhere' => $ianywhere, 'user' => $user, 'merchantos_sess_access' => $merchantos_sess_access));
+views_Render::renderView('settings', $locals = array('is_authorized' => $is_authorized, 'is_setup' => $is_setup, 'merchantos_sess_access' => $merchantos_sess_access, 'ianywhere' => $ianywhere, 'user' => $user, 'merchantos_sess_access' => $merchantos_sess_access));
