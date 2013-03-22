@@ -1,4 +1,6 @@
 <?php
+require_once("lib/oauth/library/OAuthStore.php");
+require_once("lib/oauth/library/OAuthRequester.php");
 
 class IntuitAnywhere
 {
@@ -89,9 +91,6 @@ class IntuitAnywhere
 	 */
 	public function initOAuth($oauth_store,$displayName,$callbackURL,$options,$interactive=true)
 	{
-		require_once("lib/oauth/library/OAuthStore.php");
-		require_once("lib/oauth/library/OAuthRequester.php");
-		
 		$this->displayName = $displayName;
 		$this->callbackURL = $callbackURL;
 		
@@ -108,7 +107,7 @@ class IntuitAnywhere
 		$this->authorizeURI = $options['authorize_uri'];
 		
 		$options['access'] = $oauth_store;
-		OAuthStore::instance("MOSQBSync", $options);
+		$this->_OAuthStoreInstance($options);
 		
 		if (!isset($this->store->realmId))
 		{
@@ -139,7 +138,7 @@ class IntuitAnywhere
 	protected function _authorize()
 	{
 		//  STEP 1:  If we do not have an OAuth token yet, go get one
-		if (empty($_GET["oauth_token"]))
+		if ($this->_getIncomingOAuthToken()===null)
 		{
 			$getAuthTokenParams = array(
 				//'scope' => 'https://rad.localdev/QuickBooks/',
@@ -148,7 +147,7 @@ class IntuitAnywhere
 			);
 			
 			// get a request token
-			$tokenResultParams = OAuthRequester::requestRequestToken($this->consumerKey, 0, $getAuthTokenParams);
+			$tokenResultParams = $this->_requestRequestToken($this->consumerKey, 0, $getAuthTokenParams);
 	
 			//  redirect to the intui authorization page, they will redirect back
 			header("Location: " . $this->authorizeURI . "?oauth_token=" . $tokenResultParams['token']);
@@ -156,11 +155,11 @@ class IntuitAnywhere
 		}
 		
 		//  STEP 2:  Get an access token
-		$oauthToken = $_GET["oauth_token"];
+		$oauthToken = $this->_getIncomingOAuthToken();
 		
 		try
 		{
-			OAuthRequester::requestAccessToken($this->consumerKey, $oauthToken, 0, 'POST', $_GET);
+			$this->_requestAccessToken($this->consumerKey, $oauthToken, 0, 'POST', $this->_getIncomingParams());
 		}
 		catch (OAuthException2 $e)
 		{
@@ -181,8 +180,8 @@ class IntuitAnywhere
 		'realmId' => string '512439790' (length=9)
 		'dataSource' => string 'QBO' (length=3)
 		*/
-		$this->store->realmId = $_GET['realmId'];
-		$this->store->dataSource = $_GET['dataSource'];
+		$this->store->realmId = $this->_getIncomingRealmID();
+		$this->store->dataSource = $this->_getIncomingDataSource();
 		
 		return true;
 	}
@@ -199,7 +198,7 @@ class IntuitAnywhere
 		);
 		
 		// make the docs requestrequest.
-		$request = new OAuthRequester("https://qbo.intuit.com/qbo1/rest/user/v2/".$this->store->realmId,'GET');
+		$request = $this->_getOAuthRequester("https://qbo.intuit.com/qbo1/rest/user/v2/".$this->store->realmId,'GET');
 		$result = $request->doRequest(0,array(CURLOPT_HTTPHEADER=>$extra_headers,CURLOPT_ENCODING=>1));
 		if ($result['code'] != 200)
 		{
@@ -397,7 +396,7 @@ class IntuitAnywhere
 			
 		}
 		
-		$request = new OAuthRequester($this->_getQueryURL($objectName,$objectID),$method,$params,$body);
+		$request = $this->_getOAuthRequester($this->_getQueryURL($objectName,$objectID),$method,$params,$body);
 		$result = $request->doRequest(0,$curl_opt);
 		
 		if ($result['code'] == 200)
@@ -410,7 +409,7 @@ class IntuitAnywhere
 		{
 			if ($result['headers']['location'])
 			{
-				$request = new OAuthRequester($result['headers']['location'],$method,$params,$body);
+				$request = $this->_getOAuthRequester($result['headers']['location'],$method,$params,$body);
 				$result = $request->doRequest(0,$curl_opt);
 				if ($result['code']==200)
 				{
@@ -429,7 +428,7 @@ class IntuitAnywhere
 	 */
 	public function getCurrentUser()
 	{
-		$request = new OAuthRequester("https://appcenter.intuit.com/api/v1/user/current","GET");
+		$request = $this->_getOAuthRequester("https://appcenter.intuit.com/api/v1/user/current","GET");
 		$result = $request->doRequest(0);
 		
 		if ($result['code'] != 200)
@@ -477,7 +476,7 @@ class IntuitAnywhere
 	 */
 	public function getMenu()
 	{
-		$request = new OAuthRequester("https://appcenter.intuit.com/api/v1/Account/AppMenu","GET");
+		$request = $this->_getOAuthRequester("https://appcenter.intuit.com/api/v1/Account/AppMenu","GET");
 		$result = $request->doRequest(0);
 		
 		if ($result['code'] != 200)
@@ -495,7 +494,7 @@ class IntuitAnywhere
 	 */
 	public function disconnect()
 	{
-		$request = new OAuthRequester("https://appcenter.intuit.com/api/v1/Connection/Disconnect","GET");
+		$request = $this->_getOAuthRequester("https://appcenter.intuit.com/api/v1/Connection/Disconnect","GET");
 		$result = $request->doRequest(0);
 		
 		if ($result['code'] != 200)
@@ -513,7 +512,7 @@ class IntuitAnywhere
 	 */
 	public function reconnect()
 	{
-		$request = new OAuthRequester("https://appcenter.intuit.com/api/v1/Connection/Reconnect","GET");
+		$request = $this->_getOAuthRequester("https://appcenter.intuit.com/api/v1/Connection/Reconnect","GET");
 		$result = $request->doRequest(0);
 		
 		if ($result['code'] != 200)
@@ -528,9 +527,67 @@ class IntuitAnywhere
 		$OAuthTokenSecret = (string)$xml->OAuthTokenSecret;
 		
 		// hack to install the new tokens for oauth
-		$oauth_store = OAuthStore::instance();
+		$oauth_store = $this->_OAuthStoreInstance();
 		$oauth_store->addServerToken(null, 'access', $OAuthToken, $OAuthTokenSecret, null, null);
 		
 		return true;
 	}
+	
+	/**
+	 * Override this function for unit testing mock object.
+	 */
+	protected function _getIncomingOAuthToken()
+	{
+		return $_GET['oauth_token'];
+	}
+	/**
+	 * Override this function for unit testing mock object.
+	 */
+	protected function _getIncomingRealmID()
+	{
+		return $_GET['realmId'];
+	}
+	/**
+	 * Override this function for unit testing mock object.
+	 */
+	protected function _getIncomingDataSource()
+	{
+		return $_GET['dataSource'];
+	}
+	/**
+	 * Override this function for unit testing mock object.
+	 */
+	protected function _getIncomingParams()
+	{
+		return $_GET;
+	}
+	/**
+	 * Override this function for unit testing mock object.
+	 */
+	protected function _getOAuthRequester($request, $method = null, $params = null, $body = null, $files = null)
+	{
+		return new OAuthRequester($request,$method,$params,$body,$files);
+	}
+	/**
+	 * Override this function for unit testing mock object.
+	 */
+	protected function _OAuthStoreInstance($options=array())
+	{
+		return OAuthStore::instance("MOSQBSync", $options);
+	}
+	/**
+	 * Override this function for unit testing mock object.
+	 */
+	protected function _requestRequestToken($consumer_key, $usr_id, $params = null, $method = 'POST', $options = array(), $curl_options = array())
+	{
+		return OAuthRequester::requestRequestToken($consumer_key, $usr_id, $params, $method, $options, $curl_options);
+	}
+	/**
+	 * Override this function for unit testing mock object.
+	 */
+	protected function _requestAccessToken( $consumer_key, $token, $usr_id, $method = 'POST', $options = array(), $curl_options = array() )
+	{
+		return OAuthRequester::requestAccessToken($consumer_key,$token,$usr_id,$method,$options,$curl_options);
+	}
+	
 }

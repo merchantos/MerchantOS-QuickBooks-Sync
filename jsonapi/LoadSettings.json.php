@@ -21,10 +21,15 @@ function returnOutput($output)
 
 $settings = $setup_sess_access->getArray();
 if (!$settings)
-{
-	require_once("Sync/Database.class.php");
-	$db = new Sync_Database();
-	$settings = $db->readSyncSetup($login_sess_access->account_id);
+{	
+	global $_sync_database;
+	if (!isset($_sync_database))
+	{
+		require_once("Sync/Database.class.php");
+		$_sync_database = new Sync_Database();
+	}
+
+	$settings = $_sync_database->readSyncSetup($login_sess_access->account_id);
 	$setup_sess_access->loadArray($settings);
 }
 if (!$settings)

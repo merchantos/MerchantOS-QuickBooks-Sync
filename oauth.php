@@ -4,7 +4,6 @@ require_once("config.inc.php");
 GLOBAL $_OAUTH_INTUIT_CONFIG;
 
 require_once("session.inc.php");
-require_once("Sync/Database.class.php");
 
 require_once("IntuitAnywhere/IntuitAnywhere.class.php");
 
@@ -47,7 +46,13 @@ $qb_array = $qb_sess_access->getArray();
 // when should we reconnect/renew another access token?
 $renew = time() + (60*60*24*30*4); // 4 months/120 days from now, to be safe (tokens last 6 months).
 
-$db = new Sync_Database();
-$db->writeOAuth($login_sess_access->account_id,array("oauth"=>$oauth_array,"qb"=>$qb_array,"renew"=>$renew));
+global $_sync_database;
+if (!isset($_sync_database))
+{
+	require_once("Sync/Database.class.php");
+	$_sync_database = new Sync_Database();
+}
+
+$_sync_database->writeOAuth($login_sess_access->account_id,array("oauth"=>$oauth_array,"qb"=>$qb_array,"renew"=>$renew));
 
 header("location: ./");

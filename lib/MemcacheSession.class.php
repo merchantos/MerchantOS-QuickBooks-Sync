@@ -7,23 +7,19 @@ class MemcacheSession
 	protected $expire_minutes;
 	protected $memcache;
 	
-	public static function Init($expire_minutes=60)
-	{
-		$session_class = new MemcacheSession($expire_minutes);
-		
-		/* Change the save_handler to use the class functions */
-		
-		session_set_save_handler (array(&$session_class, '_open'),
-								  array(&$session_class, '_close'),
-								  array(&$session_class, '_read'),
-								  array(&$session_class, '_write'),
-								  array(&$session_class, '_destroy'),
-								  array(&$session_class, '_gc'));
-	}
-	
-	function __construct($expire_minutes)
+	public function __construct($expire_minutes=60)
 	{
 		$this->expire_minutes = $expire_minutes;
+	}
+	
+	public function register()
+	{
+		session_set_save_handler (array($this, '_open'),
+								  array($this, '_close'),
+								  array($this, '_read'),
+								  array($this, '_write'),
+								  array($this, '_destroy'),
+								  array($this, '_gc'));
 	}
 	
     function _open($path, $name)
@@ -38,22 +34,22 @@ class MemcacheSession
         return TRUE;
     }
     
-    function readMemcache($ses_id)
+    protected function _readMemcache($ses_id)
     {
     	return $this->memcache->readMemcache($ses_id);
     }
-    function writeMemcache($ses_id,$data,$expire_minutes)
+    protected function _writeMemcache($ses_id,$data,$expire_minutes)
     {
     	return $this->memcache->writeMemcache($ses_id,$data,$expire_minutes);
     }
-    function deleteMemcache($ses_id)
+    protected function _deleteMemcache($ses_id)
     {
     	return $this->memcache->writeMemcache($ses_id);
     }
 
     /* Read session data from database */
 	function _read($ses_id) {
-		$ses_data = $this->readMemcache($ses_id);
+		$ses_data = $this->_readMemcache($ses_id);
 		if ($ses_data !== false)
 		{
 			return $ses_data;
@@ -64,7 +60,7 @@ class MemcacheSession
 
     function _write($ses_id, $data)
 	{
-		if ($this->writeMemcache($ses_id,$data,$this->expire_minutes) === true)
+		if ($this->_writeMemcache($ses_id,$data,$this->expire_minutes) === true)
 		{
 			return TRUE;
 		}
@@ -74,7 +70,7 @@ class MemcacheSession
 
     function _destroy($ses_id)
 	{
-    	$this->deleteMemcache($ses_id);
+    	$this->_deleteMemcache($ses_id);
     	return TRUE;
     }
 

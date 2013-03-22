@@ -1,9 +1,11 @@
 <?php
 require_once("config.inc.php");
 require_once("Sync/AccountCreation.class.php");
-require_once("Sync/Database.class.php");
 require_once("IntuitAnywhere/IntuitAnywhere.class.php");
 require_once("lib/SessionAccess.class.php");
+
+require_once("Tests/mock_Sync_Database.class.php");
+require_once("Tests/mock_SessionAccess.class.php");
 
 class mock_Sync_AccountCreation extends Sync_AccountCreation
 {
@@ -107,41 +109,6 @@ class mock_IntuitAnywhere_CompanyMetaData
 	public function getCompanyAddress() { return array("line1"=>"711 Capitol Way S.","#705"=>"test2","city"=>"olympia","state"=>"WA","zip"=>"98501"); }
 }
 
-class mock_SessionAccess extends SessionAccess
-{
-	public function __construct()
-	{
-		$this->_type = "me";
-		$this->_sess = array("me"=>array());
-	}
-}
-
-class mock_Sync_Database extends Sync_Database
-{
-	public $api_key;
-	public $account_id;
-	public $oauth_data_array;
-	/**
-	 * @return integer The account_id we want to use in our tests
-	 */
-	public function writeAccount($api_key)
-	{
-		$this->api_key = $api_key;
-		return 46;
-	}
-	public function writeOAuth($account_id,$oauth_data_array)
-	{
-		$this->account_id = $account_id;
-		$this->oauth_data_array = $oauth_data_array;
-		return true;
-	}
-}
-
-class mock_IntuitAnywhere // extends IntuitAnywhere -- we aren't overriding functionality so rather have it throw an error it tries to access something in here
-{
-	
-}
-
 class Sync_AccountCreationTest extends PHPUnit_Framework_TestCase
 {
 	protected static $openid = "foobar";
@@ -175,9 +142,17 @@ class Sync_AccountCreationTest extends PHPUnit_Framework_TestCase
 		return $oauthSessionAccess;
 	}
 	
+	protected function _getMockDB()
+	{
+		$db = new mock_Sync_Database();
+		$db->returns["writeAccount"] = 46;
+		$db->returns["writeOAuth"] = true;
+		return $db;
+	}
+	
     public function testConstruct()
     {
-		$db = new mock_Sync_Database();
+		$db = $this->_getMockDB();
 		$ianywhere = new mock_IntuitAnywhere(new mock_SessionAccess());
 		$merchantosSessionAcccess = new mock_SessionAccess();
 		
@@ -197,7 +172,8 @@ class Sync_AccountCreationTest extends PHPUnit_Framework_TestCase
 	
 	protected function _getMockSyncAccountCreation()
 	{
-		$db = new mock_Sync_Database();
+		$db = $this->_getMockDB();
+		
 		$ianywhere = new mock_IntuitAnywhere(new mock_SessionAccess());
 		$merchantosSessionAcccess = new mock_SessionAccess();
 		$oauthSessionAccess = $this->_getMockOAuthSessionAccess();
@@ -361,10 +337,10 @@ class Sync_AccountCreationTest extends PHPUnit_Framework_TestCase
 		$this->assertEquals(46,$login_session->account_id);
 		
 		$mock_db = $mock_ac->get_db();
-		$this->assertEquals(46,$mock_db->account_id);
-		$this->assertEquals("testkey",$mock_db->api_key);
+		$this->assertEquals("testkey",$mock_db->args['writeAccount'][0]);
+		$this->assertEquals(46,$mock_db->args['writeOAuth'][0]);
 		
-		$oauth_data_array = $mock_db->oauth_data_array;
+		$oauth_data_array = $mock_db->args['writeOAuth'][1];
 		
 		$this->assertEquals('foo',$oauth_data_array['qb']['test1']);
 		$this->assertEquals('bar',$oauth_data_array['qb']['test2']);

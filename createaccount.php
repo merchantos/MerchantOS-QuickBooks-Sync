@@ -4,7 +4,6 @@ require_once("config.inc.php");
 GLOBAL $_OAUTH_INTUIT_CONFIG;
 
 require_once("session.inc.php");
-require_once("Sync/Database.class.php");
 require_once("IntuitAnywhere/IntuitAnywhere.class.php");
 require_once("Sync/AccountCreation.class.php");
 
@@ -34,9 +33,14 @@ try
 	$merchantosSessionAcccess = new SessionAccess('merchantos');
 	$oauthSessionAccess = new SessionAccess('oauth');
 	
-	$db = new Sync_Database();
+	global $_sync_database;
+	if (!isset($_sync_database))
+	{
+		require_once("Sync/Database.class.php");
+		$_sync_database = new Sync_Database();
+	}
 	
-	$accountCreation = new Sync_AccountCreation($db,$ianywhere,$loginSessionAccess,$qbSessionAccess,$merchantosSessionAcccess,$oauthSessionAccess);
+	$accountCreation = new Sync_AccountCreation($_sync_database,$ianywhere,$loginSessionAccess,$qbSessionAccess,$merchantosSessionAcccess,$oauthSessionAccess);
 	$accountRedirectURL = $accountCreation->createMOSAccount();
 }
 catch (Exception $e)

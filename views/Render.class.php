@@ -7,9 +7,7 @@ class views_Render
 		$view_name = preg_replace("/[^a-z0-9_-]+/i", '', (string)$view_name);
 		
 		// Full path to file to be included
-		$full_file_path = 'views/'. $view_name .'.php';
-		
-		$system_file_path = $_SERVER['DOCUMENT_ROOT'] . '/Quickbooks/' . $full_file_path;
+		$viewfilename = 'views/'. $view_name .'.php';
 		
 		// Check that view_name is valid length ( > 0)
 		if(strlen($view_name) <= 0)
@@ -18,7 +16,7 @@ class views_Render
 		}
 	
 		// Check that primary view file exists    
-		if(file_exists($system_file_path))
+		if(!file_exists($viewfilename))
 		{
 			throw new RuntimeException("No view matching the view_name supplied ($view_name) was found.");
 		}
@@ -29,7 +27,7 @@ class views_Render
 			extract($locals,EXTR_SKIP);
 			
 			include('views/_head.php');
-			include($full_file_path);
+			include($viewfilename);
 			include('views/_foot.php');
 		} catch (Exception $e) {
 			throw new RuntimeException("Couldn't load view $view_name");

@@ -11,8 +11,14 @@ $login_sess_access = new SessionAccess("login");
 
 try
 {
-	$db = new Sync_Database();
-	$sync_runner = new Sync_SyncRunner($db,$login_sess_access->account_id);
+	global $_sync_database;
+	if (!isset($_sync_database))
+	{
+		require_once("Sync/Database.class.php");
+		$_sync_database = new Sync_Database();
+	}
+
+	$sync_runner = new Sync_SyncRunner($_sync_database,$login_sess_access->account_id);
 	$sync_runner->initFromSession();
 	$sync_runner->run($_GET['date'],$_GET['type'],$_GET['resync_account_log_id']);
 }

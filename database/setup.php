@@ -3,7 +3,11 @@
 require_once("../config.inc.php");
 GLOBAL $_OAUTH_INTUIT_CONFIG;
 
-require_once("Sync/Database.class.php");
+global $_sync_database;
+if (!isset($_sync_database))
+{
+	require_once("Sync/Database.class.php");
+	$_sync_database = new Sync_Database();
+}
 
-$db = new Sync_Database();
-$db->checkSetup();
+$_sync_database->checkSetup();

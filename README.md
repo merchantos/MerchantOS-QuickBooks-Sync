@@ -5,9 +5,8 @@ Use MerchantOS and Intuit Anywhere to push accounting data to QuickBooks from Me
 
 Setup:
 -Rename example-config.inc.php to config.inc.php and fill in the values inside the file.
--Run database/setup.php to configure the SQLite database (database/mos_qb_sync.sqlite).
+-Run database/setup.php to configure the database.
 
 Requirements:
 -PHP 5.3+
--SQLite3 extension
 -Sessions

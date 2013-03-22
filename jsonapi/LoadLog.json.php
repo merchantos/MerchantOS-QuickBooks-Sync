@@ -4,7 +4,6 @@ require_once("../config.inc.php");
 GLOBAL $_OAUTH_INTUIT_CONFIG;
 
 require_once("session.inc.php");
-require_once("Sync/Database.class.php");
 
 $login_sess_access = new SessionAccess("login");
 
@@ -39,8 +38,14 @@ if (isset($_GET['type']))
 	$TYPE = $_GET['type'];
 }
 
-$db = new Sync_Database();
-$log_msgs = $db->readAccountLog($type,$login_sess_access->account_id,$offset,$limit,$alerts);
+global $_sync_database;
+if (!isset($_sync_database))
+{
+	require_once("Sync/Database.class.php");
+	$_sync_database = new Sync_Database();
+}
+
+$log_msgs = $_sync_database->readAccountLog($type,$login_sess_access->account_id,$offset,$limit,$alerts);
 if (!$log_msgs)
 {
 	$log_msgs = array();

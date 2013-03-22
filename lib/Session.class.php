@@ -9,20 +9,48 @@ require_once("lib/SessionAccess.class.php");
 class lib_Session
 {
 	/**
+	 * @var Sync_Database
+	 */
+	protected $_db;
+	
+	/**
+	 * @var Array of SessionAccess instances indexed by type
+	 */
+	protected $_sessionAccess;
+	
+	protected function _getSessionAccess($type)
+	{
+		if (!isset($this->_sessionAccess[$type]))
+		{
+			$this->_sessionAccess[$type] = new SessionAccess($type);
+		}
+		return $this->_sessionAccess[$type];
+	}
+	
+	/**
+	 * Create an instance of this session initializer
+	 * @param Sync_Database $db The database connection to use to init the session from if it's a new session
+	 */
+	public function __construct($db)
+	{
+		$this->_db = $db;
+		$this->_sessionAccess = array();
+	}
+	
+	/**
 	 * Start the session
-	 * @param Sync_Database $db Database connection to read account info from if the session is new
 	 * @param boolean $needkey Do we require a key to start up a new session ($_GET['key'])
 	 */
-	public static function init($db,$needkey=true)
+	public function init($needkey=true)
 	{
-		MemcacheSession::Init(60); // this registers the sesion handlers, 60 = minutes till session expire
+		$this->_setupMemcacheSession();
 		
-		if (!isset($_REQUEST[session_name()]))
+		if (!$this->_isSessionCookieSet())
 		{
-			if (self::_isKeySet())
+			if ($this->_isKeySet())
 			{
-				session_id(self::_getKey());
-				session_start();
+				$this->_setSessionID($this->_getKey());
+				$this->_sessionStart();
 			}
 			else
 			{
@@ -33,93 +61,88 @@ class lib_Session
 				}
 				else
 				{
-					session_start();
+					$this->_sessionStart();
 				}
 			}
 		}
 		else
 		{
-			session_start();
+			$this->_sessionStart();
 		}
 		
-		if (self::_isKeySet())
+		if ($this->_isKeySet())
 		{
-			self::_initMOSKey(self::_getKey());
+			$this->_initMOSKey($this->_getKey());
 		}
 	}
-	
-	protected static function _isKeySet()
+	protected function _setSessionID($id)
 	{
-		return isset($_GET['key']);
+		session_id($id);
 	}
-	protected static function _getKey()
+	protected function _sessionStart()
 	{
-		return $_GET['key'];
+		session_start();
 	}
-	/**
-	 * @return Sync_Database
-	 */
-	protected static function _getDB()
-	{
-		require_once("Sync/Database.class.php");
-		return new Sync_Database();
-	}
-	
-	public static function reset()
+	public function reset()
 	{
 		$_SESSION = array();
 	}
 	
-	protected static function _initMOSKey($key)
+	protected function _initMOSKey($key)
 	{
-		$merchantos_sess_access = new SessionAccess("merchantos");
-		$login_sess_access = new SessionAccess("login");
+		$merchantos_sess_access = $this->_getSessionAccess('merchantos');
+		$login_sess_access = $this->_getSessionAccess('login');
 		
 		// this is where we will eventually either create a new account or login based on a login credential of $_POST['key']
-		$merchantos_sess_access->api_key = $_GET['key'];
-		if (isset($_GET['return_url']))
+		$merchantos_sess_access->api_key = $key;
+		if ($this->_isReturnURLSet())
 		{
-			$merchantos_sess_access->return_url = $_GET['return_url'];
+			$merchantos_sess_access->return_url = $this->_getReturnURL();
 		}
-		if (isset($_GET['account']))
+		if ($this->_isAccountNumberSet())
 		{
-			$merchantos_sess_access->api_account = $_GET['account'];
+			$merchantos_sess_access->api_account = $this->_getAccountNumber();
 		}
 		
-		$login_sess_access->account_id = $db->writeAccount($merchantos_sess_access->api_key);
+		$login_sess_access->account_id = $this->_db->writeAccount($merchantos_sess_access->api_key);
 		
 		// load our oauth and qb settings from db if it exists
-		$oauth_qb_arrays = $db->readOAuth($login_sess_access->account_id);
+		$oauth_qb_arrays = $this->_db->readOAuth($login_sess_access->account_id);
 		
-		if (isset($oauth_qb_arrays['oauth']) && isset($oauth_qb_arrays['qb']) && isset($oauth_qb_arrays['renew']))
+		if (!isset($oauth_qb_arrays['oauth']) || !isset($oauth_qb_arrays['qb']) || !isset($oauth_qb_arrays['renew']))
 		{
-			self::_loadOAuth($oauth_qb_arrays,$login_sess_access);
+			throw new Exception("OAuth connection to Intuit was not initialized.");
 		}
+		$this->_loadOAuth($oauth_qb_arrays);
 	}
 	
-	protected static function _loadOAuth($oauth_qb_arrays,$login_sess_access)
+	protected function _loadOAuth($oauth_qb_arrays)
 	{
-		$db = self::_getDB();
+		$oauth_sess_access = $this->_getSessionAccess("oauth");
+		$login_sess_access = $this->_getSessionAccess("login");
 		
-		$oauth_sess_access = new SessionAccess("oauth");
 		$oauth_sess_access->loadArray($oauth_qb_arrays['oauth']);
 		
-		$qb_sess_access = new SessionAccess("qb");
+		$qb_sess_access = $this->_getSessionAccess("qb");
 		$qb_sess_access->loadArray($oauth_qb_arrays['qb']);
 		
 		// load our sync settings
-		$setup_sess_access = new SessionAccess("setup");
-		$settings = $db->readSyncSetup($login_sess_access->account_id);
+		$setup_sess_access = $this->_getSessionAccess("setup");
+		$settings = $this->_db->readSyncSetup($login_sess_access->account_id);
 		$setup_sess_access->loadArray($settings);
 		
 		if ($oauth_qb_arrays['renew'] <= time())
 		{
-			self::_renewIntuitOAuth($db,$oauth_sess_access,$qb_sess_access,$login_sess_access);
+			$this->_renewIntuitOAuth();
 		}
 	}
 	
-	protected static function _renewIntuitOAuth($db,$oauth_sess_access,$qb_sess_access,$login_sess_access)
+	protected function _renewIntuitOAuth()
 	{
+		$oauth_sess_access = $this->_getSessionAccess("oauth");
+		$login_sess_access = $this->_getSessionAccess("login");
+		$qb_sess_access = $this->_getSessionAccess("qb");
+		
 		// time to reconnect/renew
 		require_once("IntuitAnywhere/IntuitAnywhere.class.php");
 		$ianywhere = new IntuitAnywhere($qb_sess_access);			
@@ -133,7 +156,65 @@ class lib_Session
 			$renew = time() + (60*60*24*30*4); // 4 months/120 days from now, to be safe (tokens last 6 months).
 			$oauth_array = $oauth_sess_access->getArray();
 			$qb_array = $qb_sess_access->getArray();
-			$db->writeOAuth($login_sess_access->account_id,array("oauth"=>$oauth_array,"qb"=>$qb_array,"renew"=>$renew));
+			$this->_db->writeOAuth($login_sess_access->account_id,array("oauth"=>$oauth_array,"qb"=>$qb_array,"renew"=>$renew));
 		}
+	}
+	
+	/**
+	 * Override in mock object for unit testing
+	 */
+	protected function _setupMemcacheSession()
+	{
+		$mem_sess = new MemcacheSession(60); // 60 minutes till session expire
+		$mem_sess->register();
+	}
+	/**
+	 * Override in mock object for unit testing
+	 */
+	protected function _isSessionCookieSet()
+	{
+		return isset($_REQUEST[session_name()]);
+	}
+	/**
+	 * Override in mock object for unit testing
+	 */
+	protected function _isKeySet()
+	{
+		return isset($_GET['key']);
+	}
+	/**
+	 * Override in mock object for unit testing
+	 */
+	protected function _getKey()
+	{
+		return $_GET['key'];
+	}
+	/**
+	 * Override in mock object for unit testing
+	 */
+	protected function _getReturnURL()
+	{
+		return $_GET['return_url'];
+	}
+	/**
+	 * Override in mock object for unit testing
+	 */
+	protected function _getAccountNumber()
+	{
+		return $_GET['account'];
+	}
+	/**
+	 * Override in mock object for unit testing
+	 */
+	protected function _isReturnURLSet()
+	{
+		return isset($_GET['return_url']);
+	}
+	/**
+	 * Override in mock object for unit testing
+	 */
+	protected function _isAccountNumberSet()
+	{
+		return isset($_GET['account']);
 	}
 }
