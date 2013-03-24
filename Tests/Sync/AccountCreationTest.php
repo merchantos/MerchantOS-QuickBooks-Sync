@@ -6,6 +6,7 @@ require_once("lib/SessionAccess.class.php");
 
 require_once("Tests/mock_Sync_Database.class.php");
 require_once("Tests/mock_SessionAccess.class.php");
+require_once("Tests/mock_IntuitAnywhere.class.php");
 
 class mock_Sync_AccountCreation extends Sync_AccountCreation
 {

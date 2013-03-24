@@ -5,6 +5,7 @@
 // we are using memcache to store our sessions
 require_once("lib/MemcacheSession.class.php");
 require_once("lib/SessionAccess.class.php");
+require_once("IntuitAnywhere/IntuitAnywhere.class.php");
 
 class lib_Session
 {
@@ -144,8 +145,7 @@ class lib_Session
 		$qb_sess_access = $this->_getSessionAccess("qb");
 		
 		// time to reconnect/renew
-		require_once("IntuitAnywhere/IntuitAnywhere.class.php");
-		$ianywhere = new IntuitAnywhere($qb_sess_access);			
+		$ianywhere = $this->_getIntuitAnywhere();
 		if ($ianywhere->isUserAuthorized())
 		{
 			GLOBAL $_OAUTH_INTUIT_CONFIG;
@@ -160,6 +160,15 @@ class lib_Session
 		}
 	}
 	
+	
+	/**
+	 * Override in mock object for unit testing
+	 */
+	protected function _getIntuitAnywhere()
+	{
+		$qb_sess_access = $this->_getSessionAccess("qb");
+		return new IntuitAnywhere($qb_sess_access);	
+	}
 	/**
 	 * Override in mock object for unit testing
 	 */

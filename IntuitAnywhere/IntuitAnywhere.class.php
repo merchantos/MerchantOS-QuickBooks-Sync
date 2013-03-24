@@ -7,7 +7,7 @@ class IntuitAnywhere
 	/**
 	 * @var SessionAccess Place to store and retrieve information about this API connection. May be session specific or persistant (database).
 	 */
-	protected $store;
+	public $store;
 	/**
 	 * @var string OAuth consumer key.
 	 */
@@ -517,7 +517,7 @@ class IntuitAnywhere
 		
 		if ($result['code'] != 200)
 		{
-			$this->_handleError($result,"Could not disconnect user.");
+			$this->_handleError($result,"Could not reconnect user.");
 			return false;
 		}
 		

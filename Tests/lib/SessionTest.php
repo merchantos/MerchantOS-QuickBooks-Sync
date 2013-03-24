@@ -4,6 +4,7 @@ require_once("lib/Session.class.php");
 
 require_once("Tests/mock_Sync_Database.class.php");
 require_once("Tests/mock_SessionAccess.class.php");
+require_once("Tests/mock_IntuitAnywhere.class.php");
 
 class mock_lib_Session extends lib_Session
 {
@@ -33,6 +34,12 @@ class mock_lib_Session extends lib_Session
 		return $this->_db;
 	}
 	
+	protected function _getIntuitAnywhere()
+	{
+		$this->args['_getIntuitAnywhere'] = func_get_args();
+		if (isset($this->returns['_getIntuitAnywhere'])) return $this->returns['_getIntuitAnywhere'];
+		return true;
+	}
 	protected function _setSessionID($id)
 	{
 		$this->args['_setSessionID'] = func_get_args();
@@ -107,6 +114,11 @@ class lib_SessionTest extends PHPUnit_Framework_TestCase
 		
 		$mock_lib_sess = new mock_lib_Session($mock_sync_db);
 		
+		$qb_sess_access = $mock_lib_sess->getSessionAccess('qb');
+		
+		$mock_intuit = new mock_IntuitAnywhere($qb_sess_access);
+		$mock_lib_sess->returns['_getIntuitAnywhere'] = $mock_intuit;
+		
 		$mock_lib_sess->init();
 		
 		$this->assertEquals(array(),$mock_lib_sess->args['_setupMemcacheSession']);
@@ -123,6 +135,11 @@ class lib_SessionTest extends PHPUnit_Framework_TestCase
 		$mock_sync_db->returns['readSyncSetup'] = array("foo"=>"bar");
 		
 		$mock_lib_sess = new mock_lib_Session($mock_sync_db);
+		
+		$qb_sess_access = $mock_lib_sess->getSessionAccess('qb');
+		
+		$mock_intuit = new mock_IntuitAnywhere($qb_sess_access);
+		$mock_lib_sess->returns['_getIntuitAnywhere'] = $mock_intuit;
 		
 		$mock_lib_sess->returns['_isSessionCookieSet'] = false;
 		$mock_lib_sess->returns['_getKey'] = "fookey";
@@ -143,6 +160,11 @@ class lib_SessionTest extends PHPUnit_Framework_TestCase
 		$mock_sync_db->returns['readSyncSetup'] = array("foo"=>"bar");
 		
 		$mock_lib_sess = new mock_lib_Session($mock_sync_db);
+		
+		$qb_sess_access = $mock_lib_sess->getSessionAccess('qb');
+		
+		$mock_intuit = new mock_IntuitAnywhere($qb_sess_access);
+		$mock_lib_sess->returns['_getIntuitAnywhere'] = $mock_intuit;
 		
 		$mock_lib_sess->returns['_isSessionCookieSet'] = false;
 		$mock_lib_sess->returns['_isKeySet'] = false;
@@ -181,6 +203,11 @@ class lib_SessionTest extends PHPUnit_Framework_TestCase
 		$mock_lib_sess = new mock_lib_Session($mock_sync_db);
 		$mock_lib_sess->returns['_isSessionCookieSet'] = false;
 		$mock_lib_sess->returns['_getKey'] = "fookey";
+		
+		$qb_sess_access = $mock_lib_sess->getSessionAccess('qb');
+		
+		$mock_intuit = new mock_IntuitAnywhere($qb_sess_access);
+		$mock_lib_sess->returns['_getIntuitAnywhere'] = $mock_intuit;
 		
 		$mock_lib_sess->returns['_getReturnURL'] = "foobar";
 		$mock_lib_sess->returns['_getAccountNumber'] = 43;
@@ -259,9 +286,16 @@ class lib_SessionTest extends PHPUnit_Framework_TestCase
 		$mock_lib_sess->returns['_getReturnURL'] = "foobar";
 		$mock_lib_sess->returns['_getAccountNumber'] = 43;
 		
+		$qb_sess_access = $mock_lib_sess->getSessionAccess('qb');
+		
+		$mock_intuit = new mock_IntuitAnywhere($qb_sess_access);
+		$mock_lib_sess->returns['_getIntuitAnywhere'] = $mock_intuit;
+		
 		$mock_sync_db->returns['writeAccount'] = 44;
 		
 		$mock_sync_db->returns['readOAuth'] = array("oauth"=>array("foo"=>"bar"),"qb"=>array("bat"=>"baz"),"renew"=>1234);
+		
+		// run not authorized
 		$mock_lib_sess->init();
 		
 		$oauth_sess_access = $mock_lib_sess->getSessionAccess("oauth");
@@ -272,5 +306,30 @@ class lib_SessionTest extends PHPUnit_Framework_TestCase
 		$this->assertEquals("bar",$oauth_sess_access->foo);
 		$this->assertEquals("baz",$qb_sess_access->bat);
 		$this->assertEquals("bar",$setup_sess_access->qux);
+		
+		$this->assertEquals(array(),$mock_lib_sess->args['_getIntuitAnywhere']);
+		$this->assertFalse(isset($mock_intuit->args['_OAuthStoreInstance']));
+		
+		// run aruthorized
+		$mock_sync_db->returns['readOAuth'] = array("oauth"=>array("foo"=>"bar"),"qb"=>array("bat"=>"baz","realmId"=>45,"BaseURI"=>"testurl"),"renew"=>1234);
+		
+		$mock_intuit = new mock_IntuitAnywhere($qb_sess_access);
+		$mock_lib_sess->returns['_getIntuitAnywhere'] = $mock_intuit;
+		
+		$mock_intuit->returns['OAuthRequester::doRequest'] = array("code"=>200,"body"=>"<test><OAuthToken>fooauthtoken</OAuthToken><OAuthTokenSecret>barauthsecret</OAuthTokenSecret></test>");
+		
+		$mock_lib_sess->init();
+		
+		$this->assertEquals(array(),$mock_intuit->args['_OAuthStoreInstance']);
+		$this->assertEquals(45,$qb_sess_access->realmId);
+		$this->assertEquals("testurl",$qb_sess_access->BaseURI);
+		
+		$this->assertEquals(44,$mock_sync_db->args['writeOAuth'][0]);
+		/**
+		 * check tokens and other oauth info being correctly written to db
+		 */
+		var_dump($mock_sync_db->args['writeOAuth'][1]);
+		
+		//$this->assertEquals("barauthsecret",$mock_sync_db->args['writeOAuth'][1]);
 	}
 }
