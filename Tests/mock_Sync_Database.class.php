@@ -1,5 +1,8 @@
 <?php
 
+/**
+ * @codeCoverageIgnore
+ */
 class mock_Sync_Database
 {
 	public $args;

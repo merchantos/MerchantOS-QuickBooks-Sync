@@ -2,6 +2,9 @@
 
 require_once("IntuitAnywhere/IntuitAnywhere.class.php");
 
+/**
+ * @codeCoverageIgnore
+ */
 class mock_OAuthRequester
 {
 	protected $_parent;
@@ -19,9 +22,13 @@ class mock_OAuthRequester
 	}
 }
 
+/**
+ * @codeCoverageIgnore
+ */
 class mock_OAuthStore
 {
 	protected $_parent;
+	public $access;
 	
 	public function __construct($parent)
 	{
@@ -30,16 +37,23 @@ class mock_OAuthStore
 	
 	public function addServerToken ( $consumer_key, $token_type, $token, $token_secret, $user_id, $options = array() ) 
 	{
+		$this->access->token = $token;
+		$this->access->token_secret = $token_secret;
 		$this->_parent->args['OAuthStore::addServerToken'] = func_get_args();
 		if (isset($this->_parent->returns['OAuthStore::addServerToken'])) return $this->_parent->returns['OAuthStore::addServerToken'];
 		return null;
 	}
 }
 
+/**
+ * @codeCoverageIgnore
+ */
 class mock_IntuitAnywhere extends IntuitAnywhere
 {
 	public $args = array();
 	public $returns = array();
+	
+	protected static $_oauth_store;
 	
 	/**
 	 * Override this function for unit testing mock object.
@@ -91,7 +105,15 @@ class mock_IntuitAnywhere extends IntuitAnywhere
 	protected function _OAuthStoreInstance($options=array())
 	{
 		$this->args['_OAuthStoreInstance'] = func_get_args();
-		return new mock_OAuthStore($this);
+		
+		if (isset(self::$_oauth_store)) return self::$_oauth_store;
+		
+		self::$_oauth_store = new mock_OAuthStore($this);
+		if (isset($options['access']))
+		{
+			self::$_oauth_store->access = $options['access'];
+		}
+		return self::$_oauth_store;
 	}
 	/**
 	 * Override this function for unit testing mock object.

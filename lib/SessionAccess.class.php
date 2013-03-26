@@ -8,7 +8,10 @@ class SessionAccess
 	protected $_sess;
 	protected $_type;
 	
-	
+	/**
+	 * @param string $type A type/name of data that this SessionAccess object will access.
+	 * @codeCoverageIgnore
+	 */
 	function __construct($type)
 	{
 		$this->_type = $type;

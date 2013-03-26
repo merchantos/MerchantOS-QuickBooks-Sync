@@ -6,6 +6,9 @@ require_once("Tests/mock_Sync_Database.class.php");
 require_once("Tests/mock_SessionAccess.class.php");
 require_once("Tests/mock_IntuitAnywhere.class.php");
 
+/**
+ * @codeCoverageIgnore
+ */
 class mock_lib_Session extends lib_Session
 {
 	public $returns = array();
@@ -310,7 +313,7 @@ class lib_SessionTest extends PHPUnit_Framework_TestCase
 		$this->assertEquals(array(),$mock_lib_sess->args['_getIntuitAnywhere']);
 		$this->assertFalse(isset($mock_intuit->args['_OAuthStoreInstance']));
 		
-		// run aruthorized
+		// run aruthorized, this will also do a reconnect because renew is low
 		$mock_sync_db->returns['readOAuth'] = array("oauth"=>array("foo"=>"bar"),"qb"=>array("bat"=>"baz","realmId"=>45,"BaseURI"=>"testurl"),"renew"=>1234);
 		
 		$mock_intuit = new mock_IntuitAnywhere($qb_sess_access);
@@ -325,11 +328,8 @@ class lib_SessionTest extends PHPUnit_Framework_TestCase
 		$this->assertEquals("testurl",$qb_sess_access->BaseURI);
 		
 		$this->assertEquals(44,$mock_sync_db->args['writeOAuth'][0]);
-		/**
-		 * check tokens and other oauth info being correctly written to db
-		 */
-		var_dump($mock_sync_db->args['writeOAuth'][1]);
-		
-		//$this->assertEquals("barauthsecret",$mock_sync_db->args['writeOAuth'][1]);
+		$this->assertEquals("fooauthtoken",$mock_sync_db->args['writeOAuth'][1]['oauth']['token']);
+		$this->assertEquals("barauthsecret",$mock_sync_db->args['writeOAuth'][1]['oauth']['token_secret']);
+		$this->assertGreaterThan(1234,$mock_sync_db->args['writeOAuth'][1]['renew']);
 	}
 }

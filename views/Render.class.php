@@ -30,7 +30,9 @@ class views_Render
 			include($viewfilename);
 			include('views/_foot.php');
 		} catch (Exception $e) {
+			// @codeCoverageIgnoreStart
 			throw new RuntimeException("Couldn't load view $view_name");
+			// @codeCoverageIgnoreEnd
 		}
 	}
 }

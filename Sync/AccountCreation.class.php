@@ -252,6 +252,7 @@ class Sync_AccountCreation
 	/**
 	 * Use MerchantOS_Account to create a new object on MOS API. Useful to override in mock object for testing.
 	 * @return SimpleXMLElement
+	 * @codeCoverageIgnore
 	 */
 	protected function _createMerchantOSAccount($shop_name,$email,$firstName,$lastName,$phone,$password)
 	{
@@ -261,6 +262,7 @@ class Sync_AccountCreation
 	/**
 	 * Use MerchantOS_Shop to list shops from the MOS API. Useful to override in mock object for testing.
 	 * @return array Array of XML shop results
+	 * @codeCoverageIgnore
 	 */
 	protected function _listAllMerchantOSShops($apiKey,$systemCustomerID)
 	{
@@ -269,6 +271,7 @@ class Sync_AccountCreation
 	}
 	/**
 	 * Use MerchantOS_Shop to update shops in the MOS API. Useful to override in mock object for testing.
+	 * @codeCoverageIgnore
 	 */
 	protected function _updateMerchantOSShops($apiKey,$systemCustomerID,$shopID,$shop_updates)
 	{
@@ -278,6 +281,7 @@ class Sync_AccountCreation
 	/**
 	 * Use IntuitAnywhere_CompanyMetaData to query IntuitAnywhere API to get company  meta data. Use this function to override in tests.
 	 * @return array Array of IntuitAnywhere_CompanyMetaData
+	 * @codeCoverageIgnore
 	 */
 	protected function _getIntuitAnywhereCompanies()
 	{
@@ -287,6 +291,7 @@ class Sync_AccountCreation
 	/**
 	 * Get a MerchantOS_SystemAPIKey object, useful for testing so a mock object can override
 	 * @return SimpleXMLElement
+	 * @codeCoverageIgnore
 	 */
 	protected function _createMerchantOSSystemAPIKey($systemCustomerID,$systemUserID)
 	{
@@ -296,6 +301,7 @@ class Sync_AccountCreation
 	/**
 	 * Use MerchantOS_SystemAPIKeyAccess to create a new object on MOS API. Useful to override in mock object for testing.
 	 * @return SimpleXMLElement
+	 * @codeCoverageIgnore
 	 */
 	protected function _createMerchantOSSystemAPIKeyAccess($systemAPIKeyID)
 	{
@@ -305,6 +311,7 @@ class Sync_AccountCreation
 	/**
 	 * Use MerchantOS_SystemOpenID to associate a new openid on MOS API. Useful to override in mock object for testing.
 	 * @return SimpleXMLElement
+	 * @codeCoverageIgnore
 	 */
 	protected function _associateMerchantOSOpenID($systemUserID,$openid)
 	{

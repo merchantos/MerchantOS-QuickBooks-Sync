@@ -102,7 +102,7 @@ class IntuitAnywhere
 		
 		if (!isset($options['authorize_uri']))
 		{
-			throw new Exception("authorize_uri option must be set for initOAuth()");
+			throw new Exception("authorize_uri option must be set for initOAuth().");
 		}
 		$this->authorizeURI = $options['authorize_uri'];
 		
@@ -123,7 +123,7 @@ class IntuitAnywhere
 		{
 			if ($this->isQBO())
 			{
-				$this->_getBaseURI();
+				$this->store->BaseURI = $this->_getBaseURI();
 			}
 			else
 			{
@@ -150,8 +150,8 @@ class IntuitAnywhere
 			$tokenResultParams = $this->_requestRequestToken($this->consumerKey, 0, $getAuthTokenParams);
 	
 			//  redirect to the intui authorization page, they will redirect back
-			header("Location: " . $this->authorizeURI . "?oauth_token=" . $tokenResultParams['token']);
-			exit;
+			$this->_redirect($this->authorizeURI . "?oauth_token=" . $tokenResultParams['token']);
+			return false; // normally not executed because _redirect has an exit;
 		}
 		
 		//  STEP 2:  Get an access token
@@ -533,8 +533,19 @@ class IntuitAnywhere
 		return true;
 	}
 	
+	
 	/**
 	 * Override this function for unit testing mock object.
+	 * @codeCoverageIgnore
+	 */
+	protected function _redirect($url)
+	{
+		header("Location: " . $url);
+		exit;
+	}
+	/**
+	 * Override this function for unit testing mock object.
+	 * @codeCoverageIgnore
 	 */
 	protected function _getIncomingOAuthToken()
 	{
@@ -542,6 +553,7 @@ class IntuitAnywhere
 	}
 	/**
 	 * Override this function for unit testing mock object.
+	 * @codeCoverageIgnore
 	 */
 	protected function _getIncomingRealmID()
 	{
@@ -549,6 +561,7 @@ class IntuitAnywhere
 	}
 	/**
 	 * Override this function for unit testing mock object.
+	 * @codeCoverageIgnore
 	 */
 	protected function _getIncomingDataSource()
 	{
@@ -556,6 +569,7 @@ class IntuitAnywhere
 	}
 	/**
 	 * Override this function for unit testing mock object.
+	 * @codeCoverageIgnore
 	 */
 	protected function _getIncomingParams()
 	{
@@ -563,6 +577,7 @@ class IntuitAnywhere
 	}
 	/**
 	 * Override this function for unit testing mock object.
+	 * @codeCoverageIgnore
 	 */
 	protected function _getOAuthRequester($request, $method = null, $params = null, $body = null, $files = null)
 	{
@@ -570,6 +585,7 @@ class IntuitAnywhere
 	}
 	/**
 	 * Override this function for unit testing mock object.
+	 * @codeCoverageIgnore
 	 */
 	protected function _OAuthStoreInstance($options=array())
 	{
@@ -577,6 +593,7 @@ class IntuitAnywhere
 	}
 	/**
 	 * Override this function for unit testing mock object.
+	 * @codeCoverageIgnore
 	 */
 	protected function _requestRequestToken($consumer_key, $usr_id, $params = null, $method = 'POST', $options = array(), $curl_options = array())
 	{
@@ -584,6 +601,7 @@ class IntuitAnywhere
 	}
 	/**
 	 * Override this function for unit testing mock object.
+	 * @codeCoverageIgnore
 	 */
 	protected function _requestAccessToken( $consumer_key, $token, $usr_id, $method = 'POST', $options = array(), $curl_options = array() )
 	{

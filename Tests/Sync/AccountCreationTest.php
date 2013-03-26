@@ -8,6 +8,9 @@ require_once("Tests/mock_Sync_Database.class.php");
 require_once("Tests/mock_SessionAccess.class.php");
 require_once("Tests/mock_IntuitAnywhere.class.php");
 
+/**
+ * @codeCoverageIgnore
+ */
 class mock_Sync_AccountCreation extends Sync_AccountCreation
 {
 	public $func_fail = array();
@@ -103,6 +106,9 @@ class mock_Sync_AccountCreation extends Sync_AccountCreation
 	}
 }
 
+/**
+ * @codeCoverageIgnore
+ */
 class mock_IntuitAnywhere_CompanyMetaData
 {
 	public $CompanyName = "acme";

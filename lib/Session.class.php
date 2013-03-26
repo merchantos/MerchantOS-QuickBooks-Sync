@@ -19,6 +19,10 @@ class lib_Session
 	 */
 	protected $_sessionAccess;
 	
+	/**
+	 * Override in mock object for unit testing
+	 * @codeCoverageIgnore
+	 */
 	protected function _getSessionAccess($type)
 	{
 		if (!isset($this->_sessionAccess[$type]))
@@ -75,18 +79,6 @@ class lib_Session
 		{
 			$this->_initMOSKey($this->_getKey());
 		}
-	}
-	protected function _setSessionID($id)
-	{
-		session_id($id);
-	}
-	protected function _sessionStart()
-	{
-		session_start();
-	}
-	public function reset()
-	{
-		$_SESSION = array();
 	}
 	
 	protected function _initMOSKey($key)
@@ -163,6 +155,31 @@ class lib_Session
 	
 	/**
 	 * Override in mock object for unit testing
+	 * @codeCoverageIgnore
+	 */
+	protected function _setSessionID($id)
+	{
+		session_id($id);
+	}
+	/**
+	 * Override in mock object for unit testing
+	 * @codeCoverageIgnore
+	 */
+	protected function _sessionStart()
+	{
+		session_start();
+	}
+	/**
+	 * Override in mock object for unit testing
+	 * @codeCoverageIgnore
+	 */
+	public function reset()
+	{
+		$_SESSION = array();
+	}
+	/**
+	 * Override in mock object for unit testing
+	 * @codeCoverageIgnore
 	 */
 	protected function _getIntuitAnywhere()
 	{
@@ -171,6 +188,7 @@ class lib_Session
 	}
 	/**
 	 * Override in mock object for unit testing
+	 * @codeCoverageIgnore
 	 */
 	protected function _setupMemcacheSession()
 	{
@@ -179,6 +197,7 @@ class lib_Session
 	}
 	/**
 	 * Override in mock object for unit testing
+	 * @codeCoverageIgnore
 	 */
 	protected function _isSessionCookieSet()
 	{
@@ -186,6 +205,7 @@ class lib_Session
 	}
 	/**
 	 * Override in mock object for unit testing
+	 * @codeCoverageIgnore
 	 */
 	protected function _isKeySet()
 	{
@@ -193,6 +213,7 @@ class lib_Session
 	}
 	/**
 	 * Override in mock object for unit testing
+	 * @codeCoverageIgnore
 	 */
 	protected function _getKey()
 	{
@@ -200,6 +221,7 @@ class lib_Session
 	}
 	/**
 	 * Override in mock object for unit testing
+	 * @codeCoverageIgnore
 	 */
 	protected function _getReturnURL()
 	{
@@ -207,6 +229,7 @@ class lib_Session
 	}
 	/**
 	 * Override in mock object for unit testing
+	 * @codeCoverageIgnore
 	 */
 	protected function _getAccountNumber()
 	{
@@ -214,6 +237,7 @@ class lib_Session
 	}
 	/**
 	 * Override in mock object for unit testing
+	 * @codeCoverageIgnore
 	 */
 	protected function _isReturnURLSet()
 	{
@@ -221,6 +245,7 @@ class lib_Session
 	}
 	/**
 	 * Override in mock object for unit testing
+	 * @codeCoverageIgnore
 	 */
 	protected function _isAccountNumberSet()
 	{
