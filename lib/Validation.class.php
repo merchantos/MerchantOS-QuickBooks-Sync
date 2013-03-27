@@ -3,6 +3,7 @@
  * A class of validation functions
  * @author Justin Laing <justin@merchantos.com>
  * @package lib
+ * @codeCoverageIgnore
  */
 class lib_Validation
 {

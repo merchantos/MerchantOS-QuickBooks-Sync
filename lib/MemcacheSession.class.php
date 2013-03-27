@@ -2,6 +2,9 @@
 
 require_once("lib/MemcacheHelper.class.php");
 
+/**
+ * @codeCoverageIgnore
+ */
 class MemcacheSession
 {
 	protected $expire_minutes;

@@ -9,6 +9,7 @@
  * @author Justin Laing
  * @author Nathan Horter <nate@merchantos.com>
  * @link http://php.net/manual/en/language.oop5.patterns.php
+ * @codeCoverageIgnore
  **/
 class MemcacheHelper
 {

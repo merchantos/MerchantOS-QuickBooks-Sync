@@ -23,6 +23,7 @@
  * @license  
  * @version  Release: @package_version@
  * @link     http://github.com/rich/php-hoptoad-notifier
+ * @codeCoverageIgnore
  */
 class helpers_Airbrake
 {

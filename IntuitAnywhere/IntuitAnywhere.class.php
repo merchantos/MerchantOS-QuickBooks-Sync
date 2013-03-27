@@ -123,7 +123,7 @@ class IntuitAnywhere
 		{
 			if ($this->isQBO())
 			{
-				$this->store->BaseURI = $this->_getBaseURI();
+				$this->_getBaseURI();
 			}
 			else
 			{
@@ -200,9 +200,10 @@ class IntuitAnywhere
 		// make the docs requestrequest.
 		$request = $this->_getOAuthRequester("https://qbo.intuit.com/qbo1/rest/user/v2/".$this->store->realmId,'GET');
 		$result = $request->doRequest(0,array(CURLOPT_HTTPHEADER=>$extra_headers,CURLOPT_ENCODING=>1));
-		if ($result['code'] != 200)
+		if (!isset($result['code']) || $result['code'] != 200)
 		{
 			$this->_handleError($result,"Failed to get BaseURI.");
+			return;
 		}
 		
 		/*
@@ -259,9 +260,10 @@ class IntuitAnywhere
 				if ($result['body'])
 				{
 					$error_xml = new SimpleXMLElement($result['body']);
-					$message = (string)$error_xml->FaultInfo->Message;
+					$message = (string)$error_xml->Message;
 				}
 				throw new Exception($message,401);
+			default:
 			case 400:
 			case 402:
 			case 403:
@@ -312,9 +314,9 @@ class IntuitAnywhere
 </FaultInfo>
 				*/
 				$error_xml = new SimpleXMLElement($result['body']);
-				$message = (string)$error_xml->FaultInfo->Message;
-				$code = (string)$error_xml->FaultInfo->ErrorCode;
-				$cause = (string)$error_xml->FaultInfo->Cause;
+				$message = (string)$error_xml->Message;
+				$code = (string)$error_xml->ErrorCode;
+				$cause = (string)$error_xml->Cause;
 				throw new Exception("$cause ($code): $message",$result['code']);
 		}
 	}

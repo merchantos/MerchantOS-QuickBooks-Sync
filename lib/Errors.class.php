@@ -2,6 +2,7 @@
 require_once("lib/Airbrake.class.php");
 /**
  * A class to catch and handle errors in our PHP.
+ * @codeCoverageIgnore
  */
 class helpers_Errors
 {
