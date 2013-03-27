@@ -1,6 +1,7 @@
 <?php
 
 require_once("Sync/Database.class.php");
+require_once("IntuitAnywhere/IntuitAnywhere.class.php");
 
 /**
  * Sync_DeleteQuickBooks: Delete data from quickbooks that was put there by this Sync app.
@@ -26,6 +27,7 @@ class Sync_DeleteQuickBooks {
 	public function __construct($ianywhere,$db)
 	{
 		$this->_ia = $ianywhere;
+		$this->_db = $db;
 	}
 	
 	/**
@@ -36,46 +38,16 @@ class Sync_DeleteQuickBooks {
 	 */
 	public function deleteObject($account_id,$type,$id)
 	{
-		$unsafetype = $_GET['type'];
 		$id = (integer)$id;
 		
-		$safetype = false;
-		switch (strtolower($unsafetype))
-		{
-			case "account":
-				$safetype = "Account";
-				break;
-			case "bill":
-				$safetype = "Bill";
-				break;
-			case "class":
-				$safetype = "Class";
-				break;
-			case "customer":
-				$safetype = "Customer";
-				break;
-			case "journal-entry":
-				$safetype = "JournalEntry";
-				break;
-			case "payment":
-				$safetype = "Payment";
-				break;
-			case "payment-method":
-				$safetype = "PaymentMethod";
-				break;
-			case "vendor":
-				$safetype = "Vendor";
-				break;
-		}
+		$safetype = $this->_getSafeDataObjectType($type);
 		if (!$safetype)
 		{
 			throw new Exception("Object to delete is not on our list of accepted object types.");
 		}
 		
 		// delete from QB
-		require_once("IntuitAnywhere/" . $safetype . ".class.php");
-		$iaclassname = "IntuitAnywhere_".$safetype;
-		$ia_data_obj = new $iaclassname($this->_ia);
+		$ia_data_obj = $this->_getIntuitAnywhereDataObject($safetype);
 		$ia_data_obj->Id = $id;
 		
 		if (!$ia_data_obj->delete())
@@ -84,10 +56,47 @@ class Sync_DeleteQuickBooks {
 		}
 		
 		// delete from database log of objects
-		if (!$db->deleteQBObject($account_id,$type,$id))
+		if (!$this->_db->deleteQBObject($account_id,$type,$id))
 		{
 			throw new Exception("Could not delete object log entry for $safetype with Id of $id.");
 		}
 		return true;
+	}
+	
+	protected function _getSafeDataObjectType($unsafetype)
+	{
+		switch (strtolower($unsafetype))
+		{
+			case "account":
+				return "Account";
+			case "bill":
+				return "Bill";
+			case "class":
+				return "Class";
+			case "customer":
+				return "Customer";
+			case "journal-entry":
+				return "JournalEntry";
+			case "payment":
+				return "Payment";
+			case "payment-method":
+				return "PaymentMethod";
+			case "vendor":
+				return "Vendor";
+			default:
+				return false;
+		}
+		return false;
+	}
+	
+	/**
+	 * Override this function for unit testing mock object.
+	 * @codeCoverageIgnore
+	 */
+	protected function _getIntuitAnywhereDataObject($safetype)
+	{
+		require_once("IntuitAnywhere/" . $safetype . ".class.php");
+		$iaclassname = "IntuitAnywhere_".$safetype;
+		return new $iaclassname($this->_ia);
 	}
 }

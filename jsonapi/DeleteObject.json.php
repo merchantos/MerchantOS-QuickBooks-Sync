@@ -25,7 +25,14 @@ function returnOutput($output)
 	return $output;
 }
 
-$sync_delete = new Sync_DeleteQuickBooks($ianywhere);
+global $_sync_database;
+if (!isset($_sync_database))
+{
+	require_once("Sync/Database.class.php");
+	$_sync_database = new Sync_Database();
+}
+
+$sync_delete = new Sync_DeleteQuickBooks($ianywhere,$_sync_database);
 $sync_delete->deleteObject($login_sess_access->account_id,$_GET['type'],$_GET['id']);
 
 echo returnOutput("{\"success\":true}");

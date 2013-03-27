@@ -1,6 +1,6 @@
 <?php
 
-require_once("session.inc.php");
+require_once("lib/SessionAccess.class.php");
 
 require_once("IntuitAnywhere/IntuitAnywhere.class.php");
 
