@@ -13,11 +13,6 @@ class Sync_Database {
 	 */
 	public function __construct()
 	{
-		if (isset($this->_pdo))
-		{
-			return;
-		}
-		//$this->_pdo = new PDO("sqlite:".MOS_QB_SYNC_DATABASE);
 		$dsn = "mysql:host=" . MOS_QB_SYNC_DATABASE_HOST . ";dbname=" . MOS_QB_SYNC_DATABASE_NAME;
 		$username = MOS_QB_SYNC_DATABASE_USERNAME;
 		$password = MOS_QB_SYNC_DATABASE_PASSWORD;
@@ -26,7 +21,36 @@ class Sync_Database {
 		
 		$this->_pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 	}
-
+	
+	/**
+	 * Create a new account based using $api_key as the login credential.
+	 * @param string $api_key The api_key login credential for this new account.
+	 * @return integer The account id of the newly created account.
+	 */
+	public function writeAccount($api_key)
+	{
+		$stmt = $this->_pdo->prepare("INSERT INTO account (api_key) VALUES (:api_key)");
+		try
+		{
+			if (!$stmt->execute(array("api_key"=>$api_key)))
+			{
+				throw new Exception("Could not load or create account.");
+			}
+			return $this->_pdo->lastInsertId();
+		}
+		catch (Exception $e)
+		{
+			// check for duplicate entry
+			$msg = $e->getMessage();
+			if (stripos($msg,"1062 Duplicate entry")===false)
+			{
+				throw $e; // not duplicate, re throw
+			}
+		}
+		// is duplicate so just read
+		return $this->readAccount($api_key);
+	}
+	
 	/**
 	 * See if this $api_key matches any accounts.
 	 * @param string $api_key The api_key login credential to look for.
@@ -65,35 +89,6 @@ class Sync_Database {
 			return null;
 		}
 		return $rows[0]['api_key'];
-	}
-	
-	/**
-	 * Create a new account based using $api_key as the login credential.
-	 * @param string $api_key The api_key login credential for this new account.
-	 * @return integer The account id of the newly created account.
-	 */
-	public function writeAccount($api_key)
-	{
-		$stmt = $this->_pdo->prepare("INSERT INTO account (api_key) VALUES (:api_key)");
-		try
-		{
-			if (!$stmt->execute(array("api_key"=>$api_key)))
-			{
-				throw new Exception("Could not load or create account.");
-			}
-			return $this->_pdo->lastInsertId();
-		}
-		catch (Exception $e)
-		{
-			// check for duplicate entry
-			$msg = $e->getMessage();
-			if (stripos($msg,"1062 Duplicate entry")===false)
-			{
-				throw $e; // not duplicate, re throw
-			}
-		}
-		// is duplicate so just read
-		return $this->readAccount($api_key);
 	}
 	
 	/**
@@ -506,9 +501,32 @@ class Sync_Database {
 		$this->_pdo->query($sql);
 	}
 	
+	
+	/**
+	 * Delete all data for an account.
+	 * @param integer $account_id The id of the account to delete
+	 */
+	public function deleteAccount($account_id)
+	{
+		$account_id = (integer)$account_id;
+		$sql = "DELETE FROM qb_object WHERE account_id = $account_id";
+		$this->_pdo->query($sql);
+		$sql = "DELETE FROM account_log WHERE account_id = $account_id";
+		$this->_pdo->query($sql);
+		$sql = "DELETE FROM sync_setup WHERE account_id = $account_id";
+		$this->_pdo->query($sql);
+		$sql = "DELETE FROM oauth WHERE account_id = $account_id";
+		$this->_pdo->query($sql);
+		$sql = "DELETE FROM account WHERE account_id = $account_id";
+		$this->_pdo->query($sql);
+	}
+	
+	
+	
 	/**
 	 * Create the database tables if they do not exist. Just used to intially create the database for this sync app.
 	 * @return boolean Success
+	 * @codeCoverageIgnore
 	 */
 	public function checkSetup()
 	{
@@ -549,6 +567,9 @@ class Sync_Database {
 		return true;
 	}
 	
+	/**
+	 * @codeCoverageIgnore
+	 */
 	protected function _doAllSetup()
 	{
 		$this->_doSetupAccount();
@@ -558,6 +579,9 @@ class Sync_Database {
 		$this->_doSetupQBObject();
 	}
 	
+	/**
+	 * @codeCoverageIgnore
+	 */
 	protected function _doSetupAccount()
 	{
 		$fields = array(
@@ -571,6 +595,9 @@ class Sync_Database {
 		$this->_pdo->query($sql);
 	}
 	
+	/**
+	 * @codeCoverageIgnore
+	 */
 	protected function _doSetupOAuth()
 	{
 		$fields = array(
@@ -584,6 +611,9 @@ class Sync_Database {
 		$this->_pdo->query($sql);
 	}
 	
+	/**
+	 * @codeCoverageIgnore
+	 */
 	protected function _doSetupSyncSetup()
 	{
 		$fields = array(
@@ -599,6 +629,9 @@ class Sync_Database {
 		$this->_pdo->query($sql);
 	}
 	
+	/**
+	 * @codeCoverageIgnore
+	 */
 	protected function _doSetupAccountLog()
 	{
 		$fields = array(
@@ -618,6 +651,9 @@ class Sync_Database {
 		$this->_pdo->query($sql);
 	}
 	
+	/**
+	 * @codeCoverageIgnore
+	 */
 	protected function _doSetupQBObject()
 	{
 		$fields = array(
@@ -635,6 +671,9 @@ class Sync_Database {
 		$this->_pdo->query($sql);
 	}
 	
+	/**
+	 * @codeCoverageIgnore
+	 */
 	protected function _getTableCreateSQL($tablename,$fields)
 	{
 		$field_sqls = array();
