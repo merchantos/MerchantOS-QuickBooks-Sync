@@ -98,17 +98,15 @@ class Sync_Database {
 	 */
 	public function readOAuth($account_id)
 	{
-		$account_id = (integer)$account_id;
-		$sql = "SELECT phpserialized FROM oauth WHERE account_id = $account_id";
-		$pdoresult = $this->_pdo->query($sql);
-		if (!$pdoresult)
+		$stmt = $this->_pdo->prepare("SELECT phpserialized FROM oauth WHERE account_id = :account_id");
+		if (!$stmt->execute(array("account_id"=>$account_id)))
 		{
-			return array();
+			return null;
 		}
-		$rows = $pdoresult->fetchAll();
+		$rows = $stmt->fetchAll();
 		if (count($rows)!==1)
 		{
-			return array();
+			return null;
 		}
 		return unserialize($rows[0]['phpserialized']);
 	}
@@ -147,13 +145,12 @@ class Sync_Database {
 	 */
 	public function readSyncSetup($account_id)
 	{
-		$sql = "SELECT name,value FROM sync_setup WHERE account_id = $account_id";
-		$pdoresult = $this->_pdo->query($sql);
-		if (!$pdoresult)
+		$stmt = $this->_pdo->prepare("SELECT name,value FROM sync_setup WHERE account_id = :account_id");
+		if (!$stmt->execute(array("account_id"=>$account_id)))
 		{
 			return array();
 		}
-		$rows = $pdoresult->fetchAll();
+		$rows = $stmt->fetchAll();
 		if (count($rows)===0)
 		{
 			return array();
@@ -215,19 +212,18 @@ class Sync_Database {
 	 */
 	public function getLastSuccessfulDataDate($type,$account_id)
 	{
-		$account_id = (integer)$account_id;
 		$extra_where = "";
 		if ($type === 'sales' || $type === 'cogs' || $type === 'orders' || $type === 'msg')
 		{
 			$extra_where .= "AND type LIKE '$type'";
 		}
-		$sql = "SELECT data_date FROM account_log WHERE account_id = $account_id AND success=1 $extra_where ORDER BY data_date DESC LIMIT 1";
-		$pdoresult = $this->_pdo->query($sql);
-		if (!$pdoresult)
+		$sql = "";
+		$stmt = $this->_pdo->prepare("SELECT data_date FROM account_log WHERE account_id = :account_id AND success=1 $extra_where ORDER BY data_date DESC LIMIT 1");
+		if (!$stmt->execute(array("account_id"=>$account_id)))
 		{
 			return null;
 		}
-		$rows = $pdoresult->fetchAll();
+		$rows = $stmt->fetchAll();
 		if (count($rows)===0)
 		{
 			return null;
@@ -249,19 +245,20 @@ class Sync_Database {
 	{
 		$start = (integer)$start->format("U");
 		$end = (integer)$end->format("U");
-		$account_id = (integer)$account_id;
 		$extra_where = "";
-		if ($type === 'sales' || $type === 'cogs' || $type === 'orders' || $type === 'msg')
+		$binds = array("account_id"=>$account_id,"start"=>$start,"end"=>$end);
+		if ($type !== 'all')
 		{
-			$extra_where .= "AND type LIKE '$type'";
+			$extra_where .= " AND type LIKE :type";
+			$binds[':type'] = $type;
 		}
-		$sql = "SELECT count(*) as num FROM account_log WHERE account_id = $account_id AND success=1 AND data_date >= $start AND data_date <= $end $extra_where";
-		$pdoresult = $this->_pdo->query($sql);
-		if (!$pdoresult)
+		$sql = "";
+		$stmt = $this->_pdo->prepare("SELECT count(*) as num FROM account_log WHERE account_id = :account_id AND success=1 AND data_date >= :start AND data_date <= :end $extra_where");
+		if (!$stmt->execute($binds))
 		{
 			return false;
 		}
-		$rows = $pdoresult->fetchAll();
+		$rows = $stmt->fetchAll();
 		if (count($rows)===0)
 		{
 			return false;
@@ -294,7 +291,6 @@ class Sync_Database {
 	{
 		$offset = (integer)$offset;
 		$limit = (integer)$limit;
-		$account_id = (integer)$account_id;
 		$extra_where = "";
 		if ($alerts_only)
 		{
@@ -305,17 +301,19 @@ class Sync_Database {
 			// don't show alerts without data_date in normal history, they are just errors to display
 			$extra_where = "AND data_date!=0";
 		}
-		if ($type === 'sales' || $type === 'cogs' || $type === 'orders' || $type === 'msg')
+		$binds = array("account_id"=>$account_id);
+		if ($type !== 'all')
 		{
-			$extra_where .= " AND type LIKE '$type'";
+			$extra_where .= " AND type LIKE :type";
+			$binds[':type'] = $type;
 		}
-		$sql = "SELECT account_log_id,UNIX_TIMESTAMP(time_stamp) as insert_time,data_date,success,msg,alert,type FROM account_log WHERE account_id = $account_id $extra_where ORDER BY time_stamp DESC LIMIT $offset,$limit";
-		$pdoresult = $this->_pdo->query($sql);
-		if (!$pdoresult)
+		$sql = "";
+		$stmt = $this->_pdo->prepare("SELECT account_log_id,UNIX_TIMESTAMP(time_stamp) as insert_time,data_date,success,msg,alert,type FROM account_log WHERE account_id = :account_id $extra_where ORDER BY time_stamp DESC, account_log_id DESC LIMIT $offset,$limit");
+		if (!$stmt->execute($binds))
 		{
 			return array();
 		}
-		$rows = $pdoresult->fetchAll();
+		$rows = $stmt->fetchAll();
 		if (count($rows)===0)
 		{
 			return array();
@@ -366,7 +364,7 @@ class Sync_Database {
 			$success = (integer)$entry['success'];
 			$alert = (integer)$entry['alert'];
 			$type = "msg";
-			if ($entry['type'] === 'sales' || $entry['type'] === 'cogs' || $entry['type'] === 'orders')
+			if (isset($entry['type']) && ($entry['type'] === 'sales' || $entry['type'] === 'cogs' || $entry['type'] === 'orders'))
 			{
 				$type = $entry['type'];
 			}
@@ -453,7 +451,7 @@ class Sync_Database {
 			$extra_where .= " AND type LIKE :type";
 			$binds[':type'] = $type;
 		}
-		$stmt = $this->_pdo->prepare("SELECT object_id, UNIX_TIMESTAMP(time_stamp) as insert_time, type FROM qb_object WHERE account_id = $account_id $extra_where ORDER BY time_stamp DESC LIMIT $offset,$limit");
+		$stmt = $this->_pdo->prepare("SELECT object_id, UNIX_TIMESTAMP(time_stamp) as insert_time, type FROM qb_object WHERE account_id = $account_id $extra_where ORDER BY time_stamp DESC, qb_object_id DESC LIMIT $offset,$limit");
 		if (!$stmt->execute($binds))
 		{
 			return array();
@@ -505,6 +503,7 @@ class Sync_Database {
 	/**
 	 * Delete all data for an account.
 	 * @param integer $account_id The id of the account to delete
+	 * @codeCoverageIgnore
 	 */
 	public function deleteAccount($account_id)
 	{
