@@ -12,11 +12,14 @@ require_once("Sync/MerchantOStoQuickBooks.class.php");
 
 class Sync_SyncRunner
 {
-	protected $_qb_setup;
-	protected $_oauth_setup;
 	protected $_account_setup;
 	protected $_account_id;
 	protected $_mos_apikey;
+	protected $_sync;
+	
+	protected $_send_sales;
+	protected $_send_inventory;
+	protected $_send_orders;
 	
 	/**
 	 * @var Sync_Database
@@ -35,71 +38,188 @@ class Sync_SyncRunner
 	
 	public function initFromSession()
 	{
-		$this->_account_setup = new SessionAccess("setup");
-		$this->_qb_setup = new SessionAccess("qb");
-		$this->_oauth_setup = new SessionAccess("oauth");
+		$this->_account_setup = $this->_getSessionAccess("setup");
 		
-		$merchantos_setup = new SessionAccess("merchantos");
+		// setup IntuitAnywhere Access
+		$qb_setup = $this->_getSessionAccess("qb");
+		$oauth_setup = $this->_getSessionAccess("oauth");
+		$ianywhere = $this->_getIntuitAnywhereAccess($oauth_setup,$qb_setup);
+		
+		// setup MOS API access
+		$merchantos_setup = $this->_getSessionAccess("merchantos");
 		$this->_mos_apikey = $merchantos_setup->api_key;
+		$mos_accounting = new MerchantOS_Accounting($this->_mos_apikey,$this->_account_id);
+		$mos_shop = new MerchantOS_Shop($this->_mos_apikey,$this->_account_id);
+		
+		// setup our sync object
+		$this->_sync = $this->_getMOSQBSync($mos_accounting,$mos_shop,$ianywhere);
+		
 	}
 	
 	public function initFromDatabase()
 	{
-		$this->_account_setup = $db->readSyncSetup($this->_account_id);
+		$this->_account_setup = $this->_db->readSyncSetup($this->_account_id);
 		
-		$oauth_qb_arrays = $db->readOAuth($this->_account_id);
+		// setup IntuitAnywhere Access
+		$oauth_qb_arrays = $this->_db->readOAuth($this->_account_id);
 		if (!isset($oauth_qb_arrays['qb']) || !isset($oauth_qb_arrays['oauth']))
 		{
 			throw new Exception("IntuitAnywhere OAuth account setup is incomplete.");
 		}
-		$this->_qb_setup = (object)$oauth_qb_arrays['qb'];
-		$this->_oauth_setup = (object)$oauth_qb_arrays['oauth'];
+		$qb_setup = (object)$oauth_qb_arrays['qb'];
+		$oauth_setup = (object)$oauth_qb_arrays['oauth'];
+		$ianywhere = $this->_getIntuitAnywhereAccess($oauth_setup,$qb_setup);
 		
-		$this->_mos_apikey = $db->getAPIKeyFromAccountID($this->_account_id);
-	}
-	
-	protected function _getIntuitAnywhereAccess()
-	{
-		GLOBAL $_OAUTH_INTUIT_CONFIG;
-		$ianywhere = new IntuitAnywhere($this->_qb_setup);	
-		$ianywhere->initOAuth($this->_oauth_setup,INTUIT_DISPLAY_NAME,INTUIT_CALLBACK_URL,$_OAUTH_INTUIT_CONFIG,false); // false = not interactive, fail if OAuth needs authorization
-		if (!$ianywhere->isUserAuthorized())
-		{
-			throw new Exception("IntuitAnywhere OAuth access could not be established. User not authorized.");
-		}
-		return $ianywhere;
-	}
-	
-	public function run($date=null,$type="all",$resync_account_log_id=null)
-	{
-		$ianywhere = $this->_getIntuitAnywhereAccess();
-		
-		$account_id = $login_sess_access->account_id;
-		
+		// setup MOS API access
+		$this->_mos_apikey = $this->_db->getAPIKeyFromAccountID($this->_account_id);
 		$mos_accounting = new MerchantOS_Accounting($this->_mos_apikey,$this->_account_id);
 		$mos_shop = new MerchantOS_Shop($this->_mos_apikey,$this->_account_id);
 		
-		$mosqb_sync = new Sync_MerchantOStoQuickBooks($mos_accounting,$mos_shop,$ianywhere);
+		// setup our sync object
+		$this->_sync = $this->_getMOSQBSync($mos_accounting,$mos_shop,$ianywhere);
+	}
+	
+	public function run($date=null,$type="all")
+	{
+		$this->_setType($type);
 		
-		$this->_setType($mosqb_sync,$type);
+		$this->_setShopsToSync();
 		
-		$average_costing = $this->_getAverageCosting();
+		$this->_setTaxAccounts();
 		
+		$this->_setAccountMapping();
+		
+		$this->_setCosting();
+		
+		// check sync settings
+		if (!$this->_sync->checkSyncSettings())
+		{
+			// we can't process a date this recent, it's against our data delay setting
+			throw new Exception("QuickBooks or MerchantOS settings have changed, you need to check your SyncSettings.");
+		}
+		
+		// sync sales
+		if ($this->_send_sales || $this->_send_inventory)
+		{
+			$sales_log = $this->_syncSalesInventory($date,$type);
+			
+			if (count($sales_log)>0)
+			{
+				$this->_db->writeAccountLogEntries($this->_account_id,$sales_log);
+			}
+		}
+		
+		
+		// sync orders
+		if ($this->_send_orders)
+		{
+			$orders_log = $this->_syncOrders($date,$type);
+			
+			if (count($orders_log)>0)
+			{
+				$this->_db->writeAccountLogEntries($this->_account_id,$orders_log);
+			}
+		}
+		
+		// record all the objects that got created, useful because we might change how things are synced in future, also we might want to do do something like add a way to delete stuff that was created to clean up a bad sync etc
+		$this->_db->writeQBObjects($this->_account_id,$this->_sync->getObjectsWritten());
+	}
+	
+	protected function _setType($type="all")
+	{
+		if (!isset($type))
+		{
+			$type = "all";
+		}
+		
+		$this->_send_sales = false;
+		$this->_send_inventory = false;
+		$this->_send_orders = false;
+		
+		$send_sales = $this->_account_setup->send_sales;
+		if ($send_sales == "on" || $send_sales == "On")
+		{
+			$this->_send_sales = true;
+		}
+		else
+		{
+			$this->_send_sales = false;
+		}
+		
+		$send_inventory = $this->_account_setup->send_inventory;
+		if ($send_inventory == "on" || $send_inventory == "On")
+		{
+			$this->_send_inventory = true;
+		}
+		else
+		{
+			$this->_send_inventory = false;
+		}
+		
+		$send_orders = $this->_account_setup->send_orders;
+		if ($send_orders == "on" || $send_orders == "On")
+		{
+			$this->_send_orders = true;
+		}
+		else
+		{
+			$this->_send_orders = false;
+		}
+		
+		
+		if (!$this->_send_sales || ($type!='all' && $type!='sales'))
+		{
+			$this->_send_sales = false;
+			$this->_sync->setNoSales();
+		}
+		
+		if (!$this->_send_inventory || ($type!='all' && $type!='cogs'))
+		{
+			$this->_send_inventory = false;
+			$this->_sync->setNoCOGS();
+		}
+		
+		if (!$this->_send_orders || ($type!='all' && $type!='orders'))
+		{
+			$this->_send_orders = false;
+			$this->_sync->setNoOrders();
+		}
+	}
+	
+	protected function _setShopsToSync()
+	{
 		// shops to sync
 		foreach ($this->_account_setup->setup_shops as $shopID=>$onoff)
 		{
 			if ($onoff === true || $onoff === 'on' || $onoff === 'On')
 			{
-				$mosqb_sync->setSyncShop($shopID);
+				$this->_sync->setSyncShop($shopID);
 			}
 		}
-		
+	}
+	
+	protected function _setTaxAccounts()
+	{
 		foreach ($this->_account_setup->setup_tax as $taxName=>$AccountId)
 		{
-			$mosqb_sync->addTaxAccount($taxName,$AccountId);
+			$this->_sync->addTaxAccount($taxName,$AccountId);
 		}
-		
-		$mosqb_sync->setAccountMapping(array(
+	}
+	
+	protected function _setCosting()
+	{
+		$options = $this->_getMOSOptions();
+		$average_costing = true;
+		if (isset($options['cost_method']) && $options['cost_method']!="average")
+		{
+			$this->_sync->setFIFOCosting();
+		}
+		// default is avg_cost so we're good
+	}
+	
+	protected function _setAccountMapping()
+	{
+		$this->_sync->setAccountMapping(array(
 			"sales"=>$this->_account_setup->sales,
 			"discounts"=>$this->_account_setup->discounts,
 			//"tax"=>$setup_sess_access->tax,
@@ -113,202 +233,126 @@ class Sync_SyncRunner
 			"orders_shipping"=>$this->_account_setup->orders_shipping,
 			"orders_other"=>$this->_account_setup->orders_other
 		));
-		
-		if (!$average_costing)
-		{
-			$mosqb_sync->setFIFOCosting();
-		}
-		
-		// check sync settings
-		if (!$mosqb_sync->checkSyncSettings())
-		{
-			// we can't process a date this recent, it's against our data delay setting
-			throw new Exception("QuickBooks or MerchantOS settings have changed, you need to check your SyncSettings.");
-		}
-		
-		// sync sales
-		if ($send_sales || $send_inventory)
-		{
-			$log_test_type = "sales";
-			if ($type == 'cogs')
-			{
-				$log_test_type = "cogs";
-			}
-			
-			$sales_start_date = new DateTime($setup_sess_access->start_date);
-			
-			// we need to get the last date synced and if start_date is <= then set it to that plus 1 day
-			$last_success_date = $db->getLastSuccessfulDataDate($log_test_type,$account_id);
-			if ($last_success_date)
-			{
-				$sales_start_date = new DateTime($last_success_date->format('c') . ' + 1 day');
-			}
-			
-			// data delay is an offset from todays date that DateTime knows how to translate
-			$sales_end_date = new DateTime($setup_sess_access->data_delay);
-			
-			if (isset($date)) {
-				$one_date = new DateTime($date);
-				if ($one_date > $sales_end_date)
-				{
-					// we can't process a date this recent, it's against our data delay setting
-					throw new Exception("Sync date is beyond your data delay setting.");
-				}
-				$sales_start_date = $one_date;
-				$sales_end_date = $one_date;
-			}
-			
-			if ($db->hasSyncSuccessDurring($log_test_type,$account_id,$sales_start_date,$sales_end_date))
-			{
-				throw new Exception("Date range has already been synced.");
-			}
-			
-			try
-			{
-				$sales_log = $mosqb_sync->syncSales($sales_start_date,$sales_end_date);
-			}
-			catch (Exception $e)
-			{
-				$sales_log = array(array("msg"=>"Error: " . $e->getMessage() . " Line: " . $e->getLine() . " File: " . $e->getFile(),"success"=>false,"alert"=>true,"type"=>"msg"));
-			}
-			
-			if (count($sales_log)>0)
-			{
-				if (isset($resync_account_log_id))
-				{
-					// delete the log entries for the previous sync of this day if we are doing a resync
-					$db->deleteAccountLogEntry($account_id,$resync_account_log_id);
-				}
-				$db->writeAccountLogEntries($account_id,$sales_log);
-			}
-		}
-		
-		
-		// sync orders
-		if ($send_orders)
-		{
-			$orders_start_date = new DateTime($setup_sess_access->start_date);
-			
-			// we need to get the last date synced and if start_date is <= then set it to that plus 1 day
-			$last_success_date = $db->getLastSuccessfulDataDate('orders',$account_id);
-			if ($last_success_date)
-			{
-				$orders_start_date = new DateTime($last_success_date->format('c') . ' + 1 day');
-			}
-			
-			// data delay is an offset from todays date that DateTime knows how to translate
-			$orders_end_date = new DateTime($setup_sess_access->data_delay);
-			
-			if (isset($date)) {
-				$one_date = new DateTime($date);
-				if ($one_date > $orders_end_date)
-				{
-					// we can't process a date this recent, it's against our data delay setting
-					throw new Exception("Sync date is beyond your data delay setting.");
-				}
-				$orders_start_date = $one_date;
-				$orders_end_date = $one_date;
-			}
-			
-			if ($db->hasSyncSuccessDurring('orders',$account_id,$orders_start_date,$orders_end_date))
-			{
-				throw new Exception("Date range has already been synced.");
-			}
-			
-			try
-			{
-				$orders_log = $mosqb_sync->syncOrders($orders_start_date,$orders_end_date);
-			}
-			catch (Exception $e)
-			{
-				$orders_log = array(array("msg"=>"Error: " . $e->getMessage() . " Line: " . $e->getLine() . " File: " . $e->getFile(),"success"=>false,"alert"=>true,"type"=>"msg"));
-			}
-			
-			if (count($orders_log)>0)
-			{
-				if (isset($resync_account_log_id))
-				{
-					// delete the log entries for the previous sync of this day if we are doing a resync
-					$db->deleteAccountLogEntry($account_id,$resync_account_log_id);
-				}
-				$db->writeAccountLogEntries($account_id,$orders_log);
-			}
-		}
-		
-		// record all the objects that got created, useful because we might change how things are synced in future, also we might want to do do something like add a way to delete stuff that was created to clean up a bad sync etc
-		$db->writeQBObjects($account_id,$mosqb_sync->getObjectsWritten());
 	}
 	
-	protected function _setType($mosqb_sync,$type="all")
+	protected function _syncSalesInventory($date,$type)
 	{
-		if (!isset($type))
+		$log_test_type = "sales";
+		if ($type == 'cogs')
 		{
-			$type = "all";
+			$log_test_type = "cogs";
 		}
 		
-		$send_sales = false;
-		$send_inventory = false;
-		$send_orders = false;
+		list($start_date,$end_date) = $this->_getStartEndDates($type,$date);
 		
-		$send_sales = $this->_account_setup->send_sales;
-		if ($send_sales == "on" || $send_sales == "On")
+		if ($this->_db->hasSyncSuccessDurring($log_test_type,$this->_account_id,$start_date,$end_date))
 		{
-			$send_sales = true;
-		}
-		else
-		{
-			$send_sales = false;
+			throw new Exception("Date range has already been synced.");
 		}
 		
-		$send_inventory = $this->_account_setup->send_inventory;
-		if ($send_inventory == "on" || $send_inventory == "On")
+		try
 		{
-			$send_inventory = true;
+			return $this->_sync->syncSales($start_date,$end_date);
 		}
-		else
+		catch (Exception $e)
 		{
-			$send_inventory = false;
-		}
-		
-		$send_orders = $this->_account_setup->send_orders;
-		if ($send_orders == "on" || $send_orders == "On")
-		{
-			$send_orders = true;
-		}
-		else
-		{
-			$send_orders = false;
-		}
-		
-		
-		if (!$send_sales || ($type!='all' && $type!='sales'))
-		{
-			$send_sales = false;
-			$mosqb_sync->setNoSales();
-		}
-		
-		if (!$send_inventory || ($type!='all' && $type!='cogs'))
-		{
-			$send_inventory = false;
-			$mosqb_sync->setNoCOGS();
-		}
-		
-		if (!$send_orders || ($type!='all' && $type!='orders'))
-		{
-			$send_orders = false;
-			$mosqb_sync->setNoOrders();
+			return array(array("msg"=>"Error: " . $e->getMessage() . " Line: " . $e->getLine() . " File: " . $e->getFile(),"success"=>false,"alert"=>true,"type"=>"msg"));
 		}
 	}
 	
-	protected function _getAverageCosting()
+	protected function _syncOrders($date,$type)
+	{
+		list($start_date,$end_date) = $this->_getStartEndDates($type,$date);
+		
+		if ($this->_db->hasSyncSuccessDurring('orders',$this->_account_id,$start_date,$end_date))
+		{
+			throw new Exception("Date range has already been synced.");
+		}
+		
+		try
+		{
+			return $this->_sync->syncOrders($start_date,$end_date);
+		}
+		catch (Exception $e)
+		{
+			return array(array("msg"=>"Error: " . $e->getMessage() . " Line: " . $e->getLine() . " File: " . $e->getFile(),"success"=>false,"alert"=>true,"type"=>"msg"));
+		}
+	}
+	
+	protected function _getStartEndDates($type,$date)
+	{
+		$start_date = new DateTime($this->_account_setup->start_date);
+		
+		// we need to get the last date synced and if start_date is <= then set it to that plus 1 day
+		$last_success_date = $this->_db->getLastSuccessfulDataDate($type,$this->_account_id);
+		if ($last_success_date)
+		{
+			$start_date = new DateTime($last_success_date->format('c') . ' + 1 day');
+		}
+		
+		// data delay is an offset from todays date that DateTime knows how to translate
+		$end_date = new DateTime($this->_account_setup->data_delay);
+		
+		if (isset($date)) {
+			$one_date = new DateTime($date);
+			if ($one_date > $end_date)
+			{
+				// we can't process a date this recent, it's against our data delay setting
+				throw new Exception("Sync date is beyond your data delay setting.");
+			}
+			$start_date = $one_date;
+			$end_date = $one_date;
+		}
+		
+		return array($start_date,$end_date);
+	}
+	
+
+	/**
+	 * Initializes and returns an IntuitAnywhere object, use this function to return a mock in unit tests
+	 * @return IntuitAnywhere
+	 * @codeCoverageIgnore
+	 */
+	protected function _getIntuitAnywhereAccess($oauth_setup,$qb_setup)
+	{
+		GLOBAL $_OAUTH_INTUIT_CONFIG;
+		$ianywhere = new IntuitAnywhere($qb_setup);	
+		$ianywhere->initOAuth($oauth_setup,INTUIT_DISPLAY_NAME,INTUIT_CALLBACK_URL,$_OAUTH_INTUIT_CONFIG,false); // false = not interactive, fail if OAuth needs authorization
+		if (!$ianywhere->isUserAuthorized())
+		{
+			throw new Exception("IntuitAnywhere OAuth access could not be established. User not authorized.");
+		}
+		return $ianywhere;
+	}
+	
+	/**
+	 * Returns a Sync_MerchantOStoQuickBooks object, use this function to return a mock in unit tests
+	 * @return Sync_MerchantOStoQuickBooks
+	 * @codeCoverageIgnore
+	 */
+	protected function _getMOSQBSync($mos_accounting,$mos_shop,$ianywhere)
+	{
+		return new Sync_MerchantOStoQuickBooks($mos_accounting,$mos_shop,$ianywhere);
+	}
+	
+	/**
+	 * Returns a SessionAccess object, use this function to return a mock in unit tests
+	 * @return SessionAccess
+	 * @codeCoverageIgnore
+	 */
+	protected function _getSessionAccess($type)
+	{
+		return new SessionAccess($type);
+	}
+	
+	/**
+	 * Returns a MerchantOS_Option->listAll() result, use this function to return a mock in unit tests
+	 * @return Array of from MerchantOS_Option->listAll()
+	 * @codeCoverageIgnore
+	 */
+	protected function _getMOSOptions()
 	{
 		$mos_option = new MerchantOS_Option($this->_mos_apikey,$this->_account_id);
-		$options = $mos_option->listAll();
-		$average_costing = true;
-		if (isset($options['cost_method']) && $options['cost_method']!="average")
-		{
-			$average_costing = false;
-		}
-		return $average_costing;
+		return $mos_option->listAll();
 	}
 }
