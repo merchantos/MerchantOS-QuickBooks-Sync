@@ -23,7 +23,9 @@ catch (Exception $e)
 	if ($e->getCode() == 22)
 	{
 		// we are disconnected, we need to reconnect
-		$oauth_sess_access->clear();
+		unset($oauth_sess_access->token_type);
+		unset($oauth_sess_access->token);
+		unset($oauth_sess_access->token_secret);
 		$qb_sess_access->clear();
 		$ianywhere = new IntuitAnywhere($qb_sess_access);
 		$ianywhere->initOAuth($oauth_sess_access,INTUIT_DISPLAY_NAME,INTUIT_CALLBACK_URL,$_OAUTH_INTUIT_CONFIG,true);
