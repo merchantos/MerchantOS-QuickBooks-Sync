@@ -168,7 +168,7 @@ class helpers_Errors
 			}
 			else
 			{
-				return "<html><body><pre>Error [$type]: $msg in <b>$file</b> on line <b>$line</b>\n</pre></body></html>";
+				return "<html><body><pre>Error [$type]: $msg in <b>$file</b> on line <b>$line</b>\n" . print_r(debug_backtrace(),true) . "\n</pre></body></html>";
 			}
 			return;
 		}
