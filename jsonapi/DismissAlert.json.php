@@ -25,6 +25,11 @@ if (!isset($_sync_database))
 	$_sync_database = new Sync_Database();
 }
 
+if (!isset($_GET['account_log_id']))
+{
+	throw new Exception("Can not dismiss alert, 'account_log_id' parameter not set.");
+}
+
 $_sync_database->dismissAlert($login_sess_access->account_id,$_GET['account_log_id']);
 
 echo returnOutput("{\"success\":true}");

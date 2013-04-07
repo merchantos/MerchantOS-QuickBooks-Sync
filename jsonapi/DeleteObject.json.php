@@ -32,6 +32,11 @@ if (!isset($_sync_database))
 	$_sync_database = new Sync_Database();
 }
 
+if (!isset($_GET['type']) || !isset($_GET['id']))
+{
+	throw new Exception("Can not delete object, 'type' or 'id' parameters not set.");
+}
+
 $sync_delete = new Sync_DeleteQuickBooks($ianywhere,$_sync_database);
 $sync_delete->deleteObject($login_sess_access->account_id,$_GET['type'],$_GET['id']);
 

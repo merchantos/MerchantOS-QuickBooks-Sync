@@ -635,6 +635,42 @@ class IntuitAnywhereTest extends PHPUnit_Framework_TestCase
 		$this->assertEquals("true",$res['IsVerified']);
 		
 	}
+	public function testGetCurrentUserException()
+	{
+		$store = new mock_SessionAccess();
+		
+		$mock_ianywhere = $this->getMock('IntuitAnywhere',
+			array(
+				'_getQueryURL',
+				'_getOAuthRequester',
+				'_handleError'),
+			array($store));
+		
+		$mock_requester = $this->getMock("mock_OAuthRequesterForIntuitAnywhere");
+		
+		$mock_requester->expects($this->once())
+			->method("doRequest")
+			->will($this->returnValue(
+				array(
+					'code'=>200,
+					'body'=>'<?xml version="1.0" encoding="utf-8"?>
+								<PlatformResponse xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://platform.intuit.com/api/v1">
+								  <ErrorMessage>This API requires Authorization.</ErrorMessage>
+								  <ErrorCode>22</ErrorCode>
+								  <ServerTime>2013-04-05T18:00:29.4277137Z</ServerTime>
+								</PlatformResponse>'
+				)
+			)
+		);
+		
+		$mock_ianywhere->expects($this->once())
+			->method("_getOAuthRequester")
+			->will($this->returnValue($mock_requester));
+		
+		$this->setExpectedException("Exception","This API requires Authorization.",22);
+		
+		$mock_ianywhere->getCurrentUser();
+	}
 	
 	public function testGetMenu()
 	{
@@ -759,5 +795,39 @@ class IntuitAnywhereTest extends PHPUnit_Framework_TestCase
 		// ok
 		$res = $mock_ianywhere->reconnect();
 		$this->assertEquals(true,$res);
+	}
+	public function testReconnectException()
+	{
+		$store = new mock_SessionAccess();
+		
+		$mock_ianywhere = $this->getMock('IntuitAnywhere',
+			array(
+				'_getQueryURL',
+				'_getOAuthRequester'),
+			array($store));
+		
+		$mock_requester = $this->getMock("mock_OAuthRequesterForIntuitAnywhere");
+		
+		$mock_requester->expects($this->once())
+			->method("doRequest")
+			->will($this->returnValue(
+				array(
+					'code'=>200,
+					'body'=>'<?xml version="1.0" encoding="utf-8"?>
+						<PlatformResponse xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://platform.intuit.com/api/v1">
+						  <ErrorMessage>This API requires Authorization.</ErrorMessage>
+						  <ErrorCode>22</ErrorCode>
+						  <ServerTime>2013-04-05T18:00:29.4277137Z</ServerTime>
+						</PlatformResponse>'
+				)
+			));
+			
+		$mock_ianywhere->expects($this->any())
+			->method("_getOAuthRequester")
+			->will($this->returnValue($mock_requester));
+		
+		$this->setExpectedException("Exception","This API requires Authorization.",22);
+		
+		$mock_ianywhere->reconnect();
 	}
 }

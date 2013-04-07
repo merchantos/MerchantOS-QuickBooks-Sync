@@ -130,7 +130,7 @@ class Sync_SyncRunnerTest extends PHPUnit_Framework_TestCase
 		
 		$mock_runner->expects($this->exactly(4))
 			->method("_getSessionAccess")
-			->will($this->returnValue(
+			->will($this->onConsecutiveCalls(
 				$account_setup,
 				(object)array('foo'=>'bar'),
 				(object)array('bat'=>'baz'),

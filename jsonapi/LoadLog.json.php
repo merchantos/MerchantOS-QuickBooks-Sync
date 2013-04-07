@@ -35,7 +35,7 @@ if (isset($_GET['alerts']) && $_GET['alerts']==1)
 $type = 'all';
 if (isset($_GET['type']))
 {
-	$TYPE = $_GET['type'];
+	$type = $_GET['type'];
 }
 
 global $_sync_database;

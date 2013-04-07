@@ -20,7 +20,11 @@ try
 
 	$sync_runner = new Sync_SyncRunner($_sync_database,$login_sess_access->account_id);
 	$sync_runner->initFromSession();
-	$sync_runner->run($_GET['date'],$_GET['type'],$_GET['resync_account_log_id']);
+	
+	$date = (isset($_GET['date'])?$_GET['date']:null);
+	$type = (isset($_GET['type'])?$_GET['type']:'all');
+	
+	$sync_runner->run($date,$type);
 }
 catch (Exception $e)
 {

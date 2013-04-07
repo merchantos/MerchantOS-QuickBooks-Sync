@@ -96,14 +96,10 @@ mosqb = {
 				$('#dashboard').show();
 			});
 		},
-		syncNow: function (date,account_log_id,type) {
+		syncNow: function (date,type) {
 			var query = "";
 			if (date) {
 				query = "?date=" + date;
-				if (account_log_id)
-				{
-					query += "&resync_account_log_id=" + account_log_id;
-				}
 				if (type)
 				{
 					query += "&type=" + type;
@@ -157,7 +153,7 @@ mosqb = {
 						if (value['success']) {
 							parent_dl.append("<dt>" + value['date'] + "</dt><dd>" + value['msg'] + dismiss + "</dd>");
 						} else {
-							parent_dl.append("<dt>" + value['date'] + "</dt><dd>" + value['msg'] + " <a href='#re-sync-day' rday='"+ value['date'] +"' rtype='" + value['type'] + "' account_log_id='" + value['account_log_id'] + "'>Re-Sync</a>" + dismiss +"</dd>");
+							parent_dl.append("<dt>" + value['date'] + "</dt><dd>" + value['msg'] + " <a href='#re-sync-day' rday='"+ value['date'] +"' rtype='" + value['type'] + "'>Re-Sync</a>" + dismiss +"</dd>");
 						}
 					});
 				} else if (alerts==0) {
@@ -423,10 +419,9 @@ $(document).ready(function() {
 	$(document).on("click","a[href='#re-sync-day']",function () {
 		var date = $(this).attr("rday");
 		var type = $(this).attr("rtype");
-		var account_log_id = $(this).attr("account_log_id");
 		var button = $("a[href='#syncnow']");
 		button.html("Syncing...");
-		mosqb.dashboard.syncNow(date,account_log_id,type).done(function (data) {
+		mosqb.dashboard.syncNow(date,type).done(function (data) {
 			button.html("Sync Now");
 			syncing = false;
 		});

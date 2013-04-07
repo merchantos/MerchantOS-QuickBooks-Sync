@@ -2,6 +2,9 @@
 
 require_once('MerchantOS/MOScURL.class.php');
 
+/**
+ * @codeCoverageIgnore
+ */
 class MOSAPICall
 {
 	protected $_mos_api_url = MOS_API_URL;

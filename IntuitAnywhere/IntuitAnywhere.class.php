@@ -441,6 +441,11 @@ class IntuitAnywhere
 		
 		$xml = new SimpleXMLElement($result['body']);
 		
+		if (isset($xml->ErrorCode) && (integer)$xml->ErrorCode>0)
+		{
+			throw new Exception((string)$xml->ErrorMessage,(integer)$xml->ErrorCode);
+		}
+		
 		$FirstName = (string)$xml->User->FirstName;
 		$LastName = (string)$xml->User->LastName;
 		$ScreenName = (string)$xml->User->ScreenName;
@@ -525,6 +530,11 @@ class IntuitAnywhere
 		
 		$xml = new SimpleXMLElement($result['body']);
 		
+		if (isset($xml->ErrorCode) && (integer)$xml->ErrorCode>0)
+		{
+			throw new Exception((string)$xml->ErrorMessage,(integer)$xml->ErrorCode);
+		}
+		
 		$OAuthToken = (string)$xml->OAuthToken;
 		$OAuthTokenSecret = (string)$xml->OAuthTokenSecret;
 		
@@ -551,7 +561,7 @@ class IntuitAnywhere
 	 */
 	protected function _getIncomingOAuthToken()
 	{
-		return $_GET['oauth_token'];
+		return (isset($_GET['oauth_token'])?$_GET['oauth_token']:null);
 	}
 	/**
 	 * Override this function for unit testing mock object.
@@ -559,7 +569,7 @@ class IntuitAnywhere
 	 */
 	protected function _getIncomingRealmID()
 	{
-		return $_GET['realmId'];
+		return (isset($_GET['realmId'])?$_GET['realmId']:null);
 	}
 	/**
 	 * Override this function for unit testing mock object.
@@ -567,7 +577,7 @@ class IntuitAnywhere
 	 */
 	protected function _getIncomingDataSource()
 	{
-		return $_GET['dataSource'];
+		return (isset($_GET['dataSource'])?$_GET['dataSource']:null);
 	}
 	/**
 	 * Override this function for unit testing mock object.

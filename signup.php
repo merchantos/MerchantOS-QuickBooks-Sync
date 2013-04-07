@@ -17,10 +17,10 @@ if (isset($login_sess_access->account_id) && $login_sess_access->account_id>0)
 	exit;
 }
 
-$email = $_GET['email'];
-$firstName = $_GET['firstName'];
-$lastName = $_GET['lastName'];
-$openid = $_GET['openid'];
+$email = (isset($_GET['email'])?$_GET['email']:'');
+$firstName = (isset($_GET['firstName'])?$_GET['firstName']:'');
+$lastName = (isset($_GET['lastName'])?$_GET['lastName']:'');
+$openid = (isset($_GET['openid'])?$_GET['openid']:'');
 
 // we'll use these when we create the MOS account later
 $login_sess_access->account_creation_first_name = $firstName;

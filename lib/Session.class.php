@@ -217,7 +217,7 @@ class lib_Session
 	 */
 	protected function _getKey()
 	{
-		return $_GET['key'];
+		return (isset($_GET['key'])?$_GET['key']:null);
 	}
 	/**
 	 * Override in mock object for unit testing
@@ -225,7 +225,7 @@ class lib_Session
 	 */
 	protected function _getReturnURL()
 	{
-		return $_GET['return_url'];
+		return (isset($_GET['return_url'])?$_GET['return_url']:null);
 	}
 	/**
 	 * Override in mock object for unit testing
@@ -233,7 +233,7 @@ class lib_Session
 	 */
 	protected function _getAccountNumber()
 	{
-		return $_GET['account'];
+		return (isset($_GET['account'])?$_GET['account']:null);
 	}
 	/**
 	 * Override in mock object for unit testing

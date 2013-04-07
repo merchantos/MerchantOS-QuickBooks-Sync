@@ -100,6 +100,11 @@ abstract class IntuitAnywhere_DataModel
 		
 		$result_xml = new SimpleXMLElement($result);
 		
+		if (isset($result_xml->ErrorCode) && (integer)$result_xml->ErrorCode>0)
+		{
+			throw new Exception((string)$xml->ErrorMessage,(integer)$xml->ErrorCode);
+		}
+		
 		$this->_loadStandardQBOXML($result_xml);
 		$this->_loadFromQBOXML($result_xml);
 	}
@@ -113,6 +118,11 @@ abstract class IntuitAnywhere_DataModel
 		$result = $this->ia->query($this->_getQBOObjectName(),$this->Id,"GET");
 		
 		$xml = new SimpleXMLElement($result);
+		
+		if (isset($xml->ErrorCode) && (integer)$xml->ErrorCode>0)
+		{
+			throw new Exception((string)$xml->ErrorMessage,(integer)$xml->ErrorCode);
+		}
 		
 		$this->_loadStandardQBOXML($xml);
 		$this->_loadFromQBOXML($xml);
@@ -171,6 +181,12 @@ abstract class IntuitAnywhere_DataModel
 			$result = $this->ia->query($this->_getQBDObjectNamePlural(),null,"POST",$params,$body);
 			
 			$xml = new SimpleXMLElement($result);
+			
+			if (isset($xml->ErrorCode) && (integer)$xml->ErrorCode>0)
+			{
+				throw new Exception((string)$xml->ErrorMessage,(integer)$xml->ErrorCode);
+			}
+			
 			$namespaces = $xml->getNamespaces(true);
 			$qbo_xml = $xml->children($namespaces["qbo"]);
 			

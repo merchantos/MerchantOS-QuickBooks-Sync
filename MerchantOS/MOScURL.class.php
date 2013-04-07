@@ -12,6 +12,7 @@
  * @author Justin Laing
  * @version 1.0
  * @package wrappers
+ * @codeCoverageIgnore
  *
  */
 class MOScURL

@@ -9,5 +9,12 @@
 			});
 			</script>
 		<?php } ?>
+		<?php $is_authorized ?>
+			<script>
+				if (window.opener) {
+					window.opener.location.href = window.opener.location.href;
+					window.close();
+				}
+			</script>
 	</body>
 </html>
